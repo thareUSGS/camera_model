@@ -3,4 +3,5 @@
 ## Developers:
 
 jlaura
+tjwilson
 ihumphrey-usgs
