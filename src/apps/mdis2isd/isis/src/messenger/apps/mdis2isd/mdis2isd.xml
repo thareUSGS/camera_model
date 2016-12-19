@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: mdis2isis.xml 2634 2011-06-15 20:07:54Z kbecker@GS.DOI.NET $ -->
+
+<application name="mdis2isd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+  <brief>
+    Import MESSENGER/MIDS EDR/RDR products into ISIS cubes
+  </brief>
+
+  <description>
+    <p>
+       mdis2isis converts PDS labelled MESSENGER/MDIS EDRs to ISIS labels.
+      MDIS has a narrow angle camera (MDIS-NAC) and a wide angel camera (MDIS-WAC)
+      with twelve filters.  This application will convert all these observations to ISIS format.
+      The resulting ISIS cubes are ready for SPICE initialization and projection.
+    </p>
+    <p>
+      Some of the images are compressed onboard the spacecraft.  When this is 
+      detected, they are unlutted and each DN is converted to its precompressed 
+      12-bit DN value.  All output files are created in floating point DN 
+      format.
+    </p>
+    <p>
+      There are DN limits that are imposed on the output pixel.  For the NAC 
+      instrument, the valid range is 0 &lt; DN &lt; 3400.  The limit for the WAC 
+      is 0 &lt; DN &lt; 3600.  For both instruments, 0 values are mapped to the 
+      NULL special pixel value.  And values that exceed the maximum are set to 
+      the HIS (high instrument saturation) special pixel value.
+    </p>
+  </description>
+
+  <category>
+    <missionItem>Messenger</missionItem>
+  </category>
+
+  <history>
+    <change name="Tyler Wilson" date="2016-12-13">
+      Original version
+    </change>
+
+  </history>
+
+  <groups>
+    <group name="Files">
+      <parameter name="FROM">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input cube file name
+        </brief>
+        <description>
+          The input MDIS EDR/RDR file
+        </description>
+        <filter>
+          *.CUB
+        </filter>
+      </parameter>
+
+      <parameter name="TO">
+        <type>filename</type>
+        <fileMode>output</fileMode>
+        <brief>
+          Output cube
+        </brief>
+        <description>
+          Output file converted from PDS EDR format to ISIS.  This ISIS file will have all the
+          information transferred from the PDS EDR file that is necessary to 
+          initialize for geometric processing (see spiceinit, cam2map, etc...).
+        </description>
+        <filter>
+          *.isd
+        </filter>
+      </parameter>
+    </group>
+
+
+  </groups>
+
+</application>
