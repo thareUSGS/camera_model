@@ -6,7 +6,7 @@ SET(CameraModel_Version_Minor 1)
 PROJECT(CameraModel)
 
 # whether not tests should be built
-OPTION (ENABLE_TESTS "Build the tests?" ON)
+OPTION (ENABLE_TESTS "Build the tests?" OFF)
 
 # Add the subdirs that are being built
 ADD_SUBDIRECTORY(src)
