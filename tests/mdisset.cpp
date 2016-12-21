@@ -12,8 +12,6 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  csm::Isd isd;
-
   //Read the ISD file
   string line;
   string filename(argv[1]);
