@@ -15,6 +15,8 @@ class mdis2isd
 
     mdis2isd(QString cubeFile);
     ~mdis2isd();
+    void isdJSON(std::vector<std::pair<std::string,double> > * isdData,std::string sensorModel,
+                           std::string filePath);
     void writeISD();
 
 

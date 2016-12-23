@@ -55,6 +55,34 @@ namespace Isis {
 
   }
 
+
+  void mdis2isd::isdJSON(std::vector<std::pair<std::string,double> > * isdData,std::string sensorModel,
+                         std::string filePath){
+
+/*
+    ofstream os;
+    os.open(filePath, ios::out);
+
+    os << "{" << endl;
+    os << "\"" <<sensorModel<<"\":"<<sensorModel;
+    os << modelName << endl;
+    os << setprecision(prec);
+
+    for (unsigned int i =0;i < isdList.size();i++) {
+
+      pair<string,double> isdNode=isdList[i];
+      os << isdNode.first << "\t\t" << isdNode.second << endl;
+    }
+
+    os.close();
+
+
+*/
+
+  }
+
+
+
   void mdis2isd::writeISD(){
 
 
@@ -65,7 +93,7 @@ namespace Isis {
     }
     PvlGroup * caminfo = m_campt.SetCenter(false,true);
 
-    std::vector<std::pair<QString,double> > isdList;
+    std::vector<std::pair<string,double> > isdList;
     double spacecraftPosition[3] = {0.0,0.0,0.0};
     double instrumentPosition[3] = {0.0,0.0,0.0};
     double omegaPhiKappa[3] = {0.0,0.0,0.0};
@@ -246,37 +274,36 @@ namespace Isis {
 
     QString isdFile = inFile.expanded().split(".",QString::SkipEmptyParts).at(0)+".isd";
 
-    cout <<"isdFile= " << isdFile << endl;
+
 
     os.open(isdFile.toLatin1().data(), ios::out);
 
     QString modelName("MDIS_SENSOR_MODEL");
 
 
-    isdList.push_back(pair<QString,double>("ISD_LINE_PRINCIPAL_POINT_PIXELS",boresightLine));
-
-    isdList.push_back(pair<QString,double>("ISD_SAMPLE_PRINCIPAL_POINT_PIXELS",boresightSample));
-    isdList.push_back(pair<QString,double>("ISD_FOCAL_LENGTH_PIXELS",double(naifKeywords["TempDependentFocalLength"])));
-    isdList.push_back(pair<QString,double>("ISD_NUMBER_OF_LINES",(double)(icube.lineCount())));
-    isdList.push_back(pair<QString,double>("ISD_NUMBER_OF_SAMPLES",(double)(icube.sampleCount())));
-    isdList.push_back(pair<QString,double>("ISD_SEMI_MAJOR_AXIS_METERS",radii[0]));
-    isdList.push_back(pair<QString,double>("ISD_SEMI_MINOR_AXIS_METERS",radii[1]));
-    isdList.push_back(pair<QString,double>("ISD_MIN_ELEVATION_METERS",0.0));
-    isdList.push_back(pair<QString,double>("ISD_MAX_ELEVATION_METERS",0.0));
-    isdList.push_back(pair<QString,double>("ISD_X_SENSOR_ORIG_METERS",instrumentPosition[0]));
-    isdList.push_back(pair<QString,double>("ISD_X_SENSOR_CURR_METERS",instrumentPosition[0]));
-    isdList.push_back(pair<QString,double>("ISD_Y_SENSOR_ORIG_METERS",instrumentPosition[1]));
-    isdList.push_back(pair<QString,double>("ISD_Y_SENSOR_CURR_METERS",instrumentPosition[1]));
-    isdList.push_back(pair<QString,double>("ISD_Z_SENSOR_ORIG_METERS",instrumentPosition[2]));
-    isdList.push_back(pair<QString,double>("ISD_Z_SENSOR_CURR_METERS",instrumentPosition[2]));
-    isdList.push_back(pair<QString,double>("ISD_OMEGA_ORIG_RADIANS",omegaPhiKappa[0]));
-    isdList.push_back(pair<QString,double>("ISD_OMEGA_CURR_RADIANS",omegaPhiKappa[0]));
-    isdList.push_back(pair<QString,double>("ISD_PHI_ORIG_RADIANS",omegaPhiKappa[1]));
-    isdList.push_back(pair<QString,double>("ISD_PHI_CURR_RADIANS",omegaPhiKappa[1]));
-    isdList.push_back(pair<QString,double>("ISD_KAPPA_ORIG_RADIANS",omegaPhiKappa[2]));
-    isdList.push_back(pair<QString,double>("ISD_KAPPA_CURR_RADIANS",omegaPhiKappa[2]));
-    isdList.push_back(pair<QString,double>("ISD_ORIGINAL_PARAMETER_COVARIANCE",0.0));
-    isdList.push_back(pair<QString,double>("ISD_CURRENT_PARAMETER_COVARIANCE",0.0));
+    isdList.push_back(pair<string,double>("ISD_LINE_PRINCIPAL_POINT_PIXELS",boresightLine));
+    isdList.push_back(pair<string,double>("ISD_SAMPLE_PRINCIPAL_POINT_PIXELS",boresightSample));
+    isdList.push_back(pair<string,double>("ISD_FOCAL_LENGTH_PIXELS",double(naifKeywords["TempDependentFocalLength"])));
+    isdList.push_back(pair<string,double>("ISD_NUMBER_OF_LINES",(double)(icube.lineCount())));
+    isdList.push_back(pair<string,double>("ISD_NUMBER_OF_SAMPLES",(double)(icube.sampleCount())));
+    isdList.push_back(pair<string,double>("ISD_SEMI_MAJOR_AXIS_METERS",radii[0]));
+    isdList.push_back(pair<string,double>("ISD_SEMI_MINOR_AXIS_METERS",radii[1]));
+    isdList.push_back(pair<string,double>("ISD_MIN_ELEVATION_METERS",0.0));
+    isdList.push_back(pair<string,double>("ISD_MAX_ELEVATION_METERS",0.0));
+    isdList.push_back(pair<string,double>("ISD_X_SENSOR_ORIG_METERS",instrumentPosition[0]));
+    isdList.push_back(pair<string,double>("ISD_X_SENSOR_CURR_METERS",instrumentPosition[0]));
+    isdList.push_back(pair<string,double>("ISD_Y_SENSOR_ORIG_METERS",instrumentPosition[1]));
+    isdList.push_back(pair<string,double>("ISD_Y_SENSOR_CURR_METERS",instrumentPosition[1]));
+    isdList.push_back(pair<string,double>("ISD_Z_SENSOR_ORIG_METERS",instrumentPosition[2]));
+    isdList.push_back(pair<string,double>("ISD_Z_SENSOR_CURR_METERS",instrumentPosition[2]));
+    isdList.push_back(pair<string,double>("ISD_OMEGA_ORIG_RADIANS",omegaPhiKappa[0]));
+    isdList.push_back(pair<string,double>("ISD_OMEGA_CURR_RADIANS",omegaPhiKappa[0]));
+    isdList.push_back(pair<string,double>("ISD_PHI_ORIG_RADIANS",omegaPhiKappa[1]));
+    isdList.push_back(pair<string,double>("ISD_PHI_CURR_RADIANS",omegaPhiKappa[1]));
+    isdList.push_back(pair<string,double>("ISD_KAPPA_ORIG_RADIANS",omegaPhiKappa[2]));
+    isdList.push_back(pair<string,double>("ISD_KAPPA_CURR_RADIANS",omegaPhiKappa[2]));
+    isdList.push_back(pair<string,double>("ISD_ORIGINAL_PARAMETER_COVARIANCE",0.0));
+    isdList.push_back(pair<string,double>("ISD_CURRENT_PARAMETER_COVARIANCE",0.0));
 
 
     os << "ISD_SENSOR_MODEL_NAME\t";
@@ -285,7 +312,7 @@ namespace Isis {
 
     for (unsigned int i =0;i < isdList.size();i++) {
 
-      pair<QString,double> isdNode=isdList[i];
+      pair<string,double> isdNode=isdList[i];
       os << isdNode.first << "\t\t" << isdNode.second << endl;
     }
 
