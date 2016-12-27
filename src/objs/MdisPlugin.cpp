@@ -8,11 +8,6 @@
 
 #include "MdisNacSensorModel.h"
 
-const std::string m_pluginName = "MDIS_PLUGIN";
-const std::string m_manufacturerName = "USGS";
-const std::string m_releaseDate = "TBA";
-const csm::Version m_csmVersion = csm::Version(3, 1, 0);
-const int m_numModels = 1;
 
 MdisPlugin::MdisPlugin() {
 }
@@ -23,43 +18,44 @@ MdisPlugin::~MdisPlugin() {
 
 
 std::string MdisPlugin::getPluginName() const {
-  return m_pluginName;
+  return "UsgsAstroFrameMdisPluginCSM";
 }
 
 
 std::string MdisPlugin::getManufacturer() const {
-  return m_manufacturerName;
+  return "UsgsAstrogeology";
 }
 
 
 std::string MdisPlugin::getReleaseDate() const {
-  return m_releaseDate;
+  return "TBA";
 }
 
 
 csm::Version MdisPlugin::getCsmVersion() const {
-  return m_csmVersion;
+  return csm::Version(3, 1, 0);
 }
 
 
 size_t MdisPlugin::getNumModels() const {
-  return m_numModels;
+  return 1;
 }
 
 
 std::string MdisPlugin::getModelName(size_t modelIndex) const {
-  // return m_numModels.at(modelIndex);
-  return m_pluginName;
+  
+  return MdisNacSensorModel::_SENSOR_MODEL_NAME;
 }
 
 
 std::string MdisPlugin::getModelFamily(size_t modelIndex) const {
-  return "?";
+  return "Raster";
 }
 
 
 csm::Version MdisPlugin::getModelVersion(const std::string &modelName) const {
-  return csm::Version(3, 0, 1);
+
+  return csm::Version(1, 0, 0);
 }
 
 
