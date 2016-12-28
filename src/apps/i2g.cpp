@@ -3,10 +3,25 @@
 #include <vector>
 
 void imageToGround(double sample, double line);
+void groundToImage(double x, double y, double z);
 
 // Simple application to test the CSM imageToGround() method for MDIS-NAC
 // i.e. prototyping
 int main() {
+
+  double x, y, z = 0.0;
+
+  std::cout << "X: ";
+  std::cin >> x;
+  std::cout << "Y: ";
+  std::cin >> y;
+  std::cout << "Z: ";
+  std::cin >> z;
+  x *= 1000;
+  y *= 1000;
+  z *= 1000;
+
+  groundToImage(x,y,z);
 
   double sample = 512.0;
   double line = 512.0;
@@ -21,6 +36,44 @@ int main() {
   return 0;
 
 }
+
+
+void groundToImage(double x, double y, double z) {
+
+  double spacecraftX = -6683432.694790688;
+  double spacecraftY = -27264735.61516516;
+  double spacecraftZ = 8536481.287414147; // SENSOR Z from isd
+  const double omega = 2.892112982708664;
+  const double phi = 3.263192693345268;
+  const double kappa = 149.1628863008221;
+
+  std::vector<double> rotationMatrix(9);
+  rotationMatrix[0] = cos(phi) * cos(kappa);
+  rotationMatrix[1] = cos(omega) * sin(kappa) + sin(omega) * sin(phi) * cos(kappa);
+  rotationMatrix[2] = sin(omega) * sin(kappa) - cos(omega) * sin(phi) * cos(kappa);
+  rotationMatrix[3] = -1 * cos(phi) * sin(kappa); 
+  rotationMatrix[4] = cos(omega) * cos(kappa) - sin(omega) * sin(phi) * sin(kappa);
+  rotationMatrix[5] = sin(omega) * cos(kappa) + cos(omega) * sin(phi) * sin(kappa);
+  rotationMatrix[6] = sin(phi);
+  rotationMatrix[7] = -1 * sin(omega) * cos(phi);
+  rotationMatrix[8] = cos(omega) * cos(phi);
+
+  double f = 549.302734762479; // focal length
+
+  double sample = -f * (
+                  ( rotationMatrix[0] * (x - spacecraftX) + rotationMatrix[1] * (y - spacecraftY) + rotationMatrix[2] * (z - spacecraftZ) ) /
+                  ( rotationMatrix[6] * (x - spacecraftX) + rotationMatrix[7] * (y - spacecraftY) + rotationMatrix[8] * (z - spacecraftZ) ) )
+                + 512.0;
+
+  double line = -f * (
+                  ( rotationMatrix[3] * (x - spacecraftX) + rotationMatrix[4] * (y - spacecraftY) + rotationMatrix[5] * (z - spacecraftZ) ) /
+                  ( rotationMatrix[6] * (x - spacecraftX) + rotationMatrix[7] * (y - spacecraftY) + rotationMatrix[8] * (z - spacecraftZ) ) )
+                + 512.0;
+
+  std::cout << "\nsample, line = " << sample << ", " << line << std::endl;
+}
+
+
 
 void imageToGround(double sample, double line) {
 
@@ -68,14 +121,14 @@ void imageToGround(double sample, double line) {
   double spacecraftX = -6683432.694790688;
   double spacecraftY = -27264735.61516516;
 
-  double f = 549.3027347624796; // focal length
-  double x = 
-             ( spacecraftAltitude * rotationMatrix[0] * (sample - focalPlaneX) + rotationMatrix[3] * (line - focalPlaneY) + rotationMatrix[6] * (-1 * f) ) /
+  double f = 549.3027347624796 * 1000; // focal length
+  double x = z * 
+             ( rotationMatrix[0] * (sample - focalPlaneX) + rotationMatrix[3] * (line - focalPlaneY) + rotationMatrix[6] * (-1 * f) ) /
              ( rotationMatrix[2] * (sample - focalPlaneX) + rotationMatrix[5] * (line - focalPlaneY) + rotationMatrix[8] * (-1 * f) )
            + spacecraftX;
 
-  double y = 
-             ( spacecraftAltitude * rotationMatrix[1] * (sample - focalPlaneX) + rotationMatrix[4] * (line - focalPlaneY) + rotationMatrix[7] * (-1 * f) ) /
+  double y = z * 
+             ( rotationMatrix[1] * (sample - focalPlaneX) + rotationMatrix[4] * (line - focalPlaneY) + rotationMatrix[7] * (-1 * f) ) /
              ( rotationMatrix[2] * (sample - focalPlaneX) + rotationMatrix[5] * (line - focalPlaneY) + rotationMatrix[8] * (-1 * f) )
            + spacecraftY;
 
