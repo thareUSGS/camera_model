@@ -40,35 +40,63 @@ int main() {
 
 void groundToImage(double x, double y, double z) {
 
-  double spacecraftX = -6683432.694790688;
-  double spacecraftY = -27264735.61516516;
-  double spacecraftZ = 8536481.287414147; // SENSOR Z from isd
+  double xl= -6683432.694790688;
+  double yl = -27264735.61516516;
+  double zl = 8536481.287414147; // SENSOR Z from isd
+
+  std::cout << "\nDEBUG\n";
+  std::cout << "x =  " << x;
+  std::cout << "\ny =  " << y;
+  std::cout << "\nz =  " << z << std::endl;
+  std::cout << "xl = " << xl;
+  std::cout << "\nyl = " << yl;
+  std::cout << "\nzl = " << zl;
   const double omega = 2.892112982708664;
   const double phi = 3.263192693345268;
   const double kappa = 149.1628863008221;
 
+  const double sinw = sin(omega);
+  const double sinp = sin(phi);
+  const double sink = sin(kappa);
+  const double cosw = cos(omega);
+  const double cosp = cos(phi);
+  const double cosk = cos(kappa);
+
   std::vector<double> rotationMatrix(9);
-  rotationMatrix[0] = cos(phi) * cos(kappa);
-  rotationMatrix[1] = cos(omega) * sin(kappa) + sin(omega) * sin(phi) * cos(kappa);
-  rotationMatrix[2] = sin(omega) * sin(kappa) - cos(omega) * sin(phi) * cos(kappa);
-  rotationMatrix[3] = -1 * cos(phi) * sin(kappa); 
-  rotationMatrix[4] = cos(omega) * cos(kappa) - sin(omega) * sin(phi) * sin(kappa);
-  rotationMatrix[5] = sin(omega) * cos(kappa) + cos(omega) * sin(phi) * sin(kappa);
-  rotationMatrix[6] = sin(phi);
-  rotationMatrix[7] = -1 * sin(omega) * cos(phi);
-  rotationMatrix[8] = cos(omega) * cos(phi);
+  rotationMatrix[0] = cosp * cosk;
+  rotationMatrix[1] = cosw * sink + sinw * sinp * cosk;
+  rotationMatrix[2] = sinw * sink - cosw * sinp * cosk;
+  rotationMatrix[3] = -1 * cosp * sink;
+  rotationMatrix[4] = cosw * cosk - sinw * sinp * sink;
+  rotationMatrix[5] = sinw * cosk + cosw * sinp * sink;
+  rotationMatrix[6] = sinp;
+  rotationMatrix[7] = -1 * sinw * cosp;
+  rotationMatrix[8] = cosw * cosp;                             
 
-  double f = 549.302734762479; // focal length
+  std::vector<double> &m = rotationMatrix;
 
-  double sample = -f * (
-                  ( rotationMatrix[0] * (x - spacecraftX) + rotationMatrix[1] * (y - spacecraftY) + rotationMatrix[2] * (z - spacecraftZ) ) /
-                  ( rotationMatrix[6] * (x - spacecraftX) + rotationMatrix[7] * (y - spacecraftY) + rotationMatrix[8] * (z - spacecraftZ) ) )
-                + 512.0;
+  const double f = 549.302734762479; // focal length
+  const double x0 = 0.0; // principal point offset x
+  const double y0 = 0.0; // principal point offset y
+ 
+  double px = x0 + -f * (
+                  ( m[0] * (x - xl) + m[1] * (y - yl) + m[2] * (z - zl) ) /
+                  ( m[6] * (x - xl) + m[7] * (y - yl) + m[8] * (z - zl) ) );
 
-  double line = -f * (
-                  ( rotationMatrix[3] * (x - spacecraftX) + rotationMatrix[4] * (y - spacecraftY) + rotationMatrix[5] * (z - spacecraftZ) ) /
-                  ( rotationMatrix[6] * (x - spacecraftX) + rotationMatrix[7] * (y - spacecraftY) + rotationMatrix[8] * (z - spacecraftZ) ) )
-                + 512.0;
+  double py = x0 + -f * (
+                  ( m[3] * (x - xl) + m[4] * (y - yl) + m[5] * (z - zl) ) /
+                  ( m[6] * (x - xl) + m[7] * (y - yl) + m[8] * (z - zl) ) );
+
+  std::cout << "\npx, py = " << px << ", " << py << std::endl;
+
+  // Convert from image plane / focal plane (mm) to sample / line
+  const double itranss[3] = { 0.0, 71.42857143, 0.0 };
+  const double itransl[3] = { 0.0, 0.0, 71.42857143 };
+
+  px = py = -0.007;
+
+  double sample = itranss[0] + (itranss[1] * px + itranss[2] * py) + 512.0;
+  double line = itransl[0] + (itransl[1] * px + itransl[2] * py) + 512.0;
 
   std::cout << "\nsample, line = " << sample << ", " << line << std::endl;
 }
@@ -93,45 +121,53 @@ void imageToGround(double sample, double line) {
                                  + (transY[2] * line);
   std::cout << "\nFOCAL PLANE (X, Y) mm: (" << focalPlaneX << ", " << focalPlaneY << ")\n";
 
+// DO WE NEED TO USE THE DETECTOR LINE AND SAMPLE OFFSETS ABOVE?
+
 // Rotation stuff
   // angles grabbed from isd (generated from mdis2isd)
   const double omega = 2.892112982708664;
   const double phi = 3.263192693345268;
   const double kappa = 149.1628863008221;
 
+  const double sinw = sin(omega);
+  const double sinp = sin(phi);
+  const double sink = sin(kappa);
+  const double cosw = cos(omega);
+  const double cosp = cos(phi);
+  const double cosk = cos(kappa);
+
   // Rotation matrix grabbed from Mikhail's "Introduction to Modern Photogrammetry"
   std::vector<double> rotationMatrix(9);
-  rotationMatrix[0] = cos(phi) * cos(kappa);
-  rotationMatrix[1] = cos(omega) * sin(kappa) + sin(omega) * sin(phi) * cos(kappa);
-  rotationMatrix[2] = sin(omega) * sin(kappa) - cos(omega) * sin(phi) * cos(kappa);
-  rotationMatrix[3] = -1 * cos(phi) * sin(kappa); 
-  rotationMatrix[4] = cos(omega) * cos(kappa) - sin(omega) * sin(phi) * sin(kappa);
-  rotationMatrix[5] = sin(omega) * cos(kappa) + cos(omega) * sin(phi) * sin(kappa);
-  rotationMatrix[6] = sin(phi);
-  rotationMatrix[7] = -1 * sin(omega) * cos(phi);
-  rotationMatrix[8] = cos(omega) * cos(phi);
+  rotationMatrix[0] = cosp * cosk;
+  rotationMatrix[1] = cosw * sink + sinw * sinp * cosk;
+  rotationMatrix[2] = sinw * sink - cosw * sinp * cosk;
+  rotationMatrix[3] = -1 * cosp * sink;
+  rotationMatrix[4] = cosw * cosk - sinw * sinp * sink;
+  rotationMatrix[5] = sinw * cosk + cosw * sinp * sink;
+  rotationMatrix[6] = sinp;
+  rotationMatrix[7] = -1 * sinw * cosp;
+  rotationMatrix[8] = cosw * cosp;                             
+
+  std::vector<double> &m = rotationMatrix;
 
   // Note that elevation will be the height parameter in CSM's imageToGround.
   // For now, assume that ellipsoid has no terrain features
-  double elevation = 6051800; // mercury ellipsoid
+  double majorAxis = 6051800; // mercury ellipsoid
+
+  double spacecraftX = -6683432.694790688; // SENSOR X
+  double spacecraftY = -27264735.61516516; // SENSOR Y
   double spacecraftZ = 8536481.287414147; // SENSOR Z from isd
-  double spacecraftAltitude = elevation - spacecraftZ;
-  double z = spacecraftAltitude; // temp
 
-  double spacecraftX = -6683432.694790688;
-  double spacecraftY = -27264735.61516516;
+  double f = 549.3027347624796; // focal length (mm)
+  double x = 1 * 
+             ( m[0] * (focalPlaneX) + m[3] * (focalPlaneY) + m[6] * (-1 * f) ) /
+             ( m[2] * (focalPlaneX) + m[5] * (focalPlaneY) + m[8] * (-1 * f) )
+           + spacecraftX; // what coordinate system is this in?
 
-  double f = 549.3027347624796 * 1000; // focal length
-  double x = z * 
-             ( rotationMatrix[0] * (sample - focalPlaneX) + rotationMatrix[3] * (line - focalPlaneY) + rotationMatrix[6] * (-1 * f) ) /
-             ( rotationMatrix[2] * (sample - focalPlaneX) + rotationMatrix[5] * (line - focalPlaneY) + rotationMatrix[8] * (-1 * f) )
-           + spacecraftX;
+  double y = 1 * 
+             ( m[1] * (focalPlaneX) + m[4] * (focalPlaneY) + m[7] * (-1 * f) ) /
+             ( m[2] * (focalPlaneX) + m[5] * (focalPlaneY) + m[8] * (-1 * f) )
+           + spacecraftY; // what coordinate system is this in?
 
-  double y = z * 
-             ( rotationMatrix[1] * (sample - focalPlaneX) + rotationMatrix[4] * (line - focalPlaneY) + rotationMatrix[7] * (-1 * f) ) /
-             ( rotationMatrix[2] * (sample - focalPlaneX) + rotationMatrix[5] * (line - focalPlaneY) + rotationMatrix[8] * (-1 * f) )
-           + spacecraftY;
-
-
-  std::cout << "\n(x, y) = (" << x/1000 << ", " << y/1000 << ", " << z/1000 << ") (km)\n";
+  std::cout << "\n(x, y) = (" << x/1000 << ", " << y/1000 << ", " << 1/1000 << ") (km)\n";
 }
