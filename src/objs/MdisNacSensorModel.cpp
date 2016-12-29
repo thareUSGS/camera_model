@@ -3,6 +3,9 @@
 
 #include "csm/Error.h"
 
+const std::string MdisNacSensorModel::_SENSOR_MODEL_NAME 
+                                      = "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so";
+
 MdisNacSensorModel::MdisNacSensorModel() {
 
   
