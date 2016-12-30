@@ -11,6 +11,7 @@ int main() {
 
   double x, y, z = 0.0;
 
+/*
   std::cout << "X: ";
   std::cin >> x;
   std::cout << "Y: ";
@@ -22,6 +23,7 @@ int main() {
   z *= 1000;
 
   groundToImage(x,y,z);
+*/
 
   double sample = 512.0;
   double line = 512.0;
@@ -78,25 +80,58 @@ void groundToImage(double x, double y, double z) {
   const double f = 549.302734762479; // focal length
   const double x0 = 0.0; // principal point offset x
   const double y0 = 0.0; // principal point offset y
+
+  const double v1 = 
+                  ( m[0] * (x - xl) + m[1] * (y - yl) + m[2] * (z - zl) );
+  const double v2 =
+                  ( m[3] * (x - xl) + m[4] * (y - yl) + m[5] * (z - zl) );
+  const double v3 = 
+                  ( m[6] * (x - xl) + m[7] * (y - yl) + m[8] * (z - zl) );
+
+  std::cout << "\nv1: " << v1;
+  std::cout << "\nv2: " << v2;
+  std::cout << "\nv3: " << v3;
  
-  double px = x0 + -f * (
+  double px = 512.0 - f * (
                   ( m[0] * (x - xl) + m[1] * (y - yl) + m[2] * (z - zl) ) /
                   ( m[6] * (x - xl) + m[7] * (y - yl) + m[8] * (z - zl) ) );
 
-  double py = x0 + -f * (
+  double py = 512.0 - f * (
                   ( m[3] * (x - xl) + m[4] * (y - yl) + m[5] * (z - zl) ) /
                   ( m[6] * (x - xl) + m[7] * (y - yl) + m[8] * (z - zl) ) );
 
-  std::cout << "\npx, py = " << px << ", " << py << std::endl;
+  std::cout << "\npx, py" << px << ", " << py << "\n";
+
 
   // Convert from image plane / focal plane (mm) to sample / line
-  const double itranss[3] = { 0.0, 71.42857143, 0.0 };
-  const double itransl[3] = { 0.0, 0.0, 71.42857143 };
+  double itranss[3] = { 0.0, 71.42857143, 0.0 };
+  double itransl[3] = { 0.0, 0.0, 71.42857143 };
+  //const double itranss[3] = {0.0, 0.014, 0.0}; // JSON transx
+  //const double itransl[3] = {0.0, 0.0, 0.014}; // JSON transy
 
-  px = py = -0.007;
+  // convert image xy to undistorted detector coordinates
+  double xp = f * px;
+  double yp = f * py;
+  std::cout << "\nxp, yp = " << xp << ", " << yp << std::endl;
 
-  double sample = itranss[0] + (itranss[1] * px + itranss[2] * py) + 512.0;
-  double line = itransl[0] + (itransl[1] * px + itransl[2] * py) + 512.0;
+  xp = 0.0; // actual detector coordinates (mm) x
+  yp = 0.0; // acutal detector coordinates (mm) y
+
+  const double samplePP = 512.0;
+  const double linePP = 512.0;
+
+  // convert distorted detector coordinates to image pixel coordinates s,l
+  double sample = itranss[0] + (itranss[1] * xp + itranss[2] * yp) + samplePP;
+  double line =   itransl[0] + (itransl[1] * xp + itransl[2] * yp) + linePP;
+
+  // DEBUG
+  // px = py = -0.007;
+
+  //double sample = itranss[0] + (itranss[1] * px + itranss[2] * py) + 512.0;
+  //double line = itransl[0] + (itransl[1] * px + itransl[2] * py) + 512.0;
+
+  //double sample = 512.0 - f * px;
+  //double line = 512.0 - f * py;
 
   std::cout << "\nsample, line = " << sample << ", " << line << std::endl;
 }
@@ -120,6 +155,14 @@ void imageToGround(double sample, double line) {
   double focalPlaneY = transY[0] + (transY[1] * sample)
                                  + (transY[2] * line);
   std::cout << "\nFOCAL PLANE (X, Y) mm: (" << focalPlaneX << ", " << focalPlaneY << ")\n";
+  double f = 549.3027347624796; // focal length (mm)
+
+  // Create a unit vector from focalPlaneX, focalPlaneY, and focalLength
+  double magnitude = sqrt( (focalPlaneX * focalPlaneX) + (focalPlaneY * focalPlaneY) + f*f );
+  std::vector<double> vhat(3);
+  vhat[0] = (focalPlaneX / magnitude);
+  vhat[1] = (focalPlaneY / magnitude);
+  vhat[2] = (f / magnitude);
 
 // DO WE NEED TO USE THE DETECTOR LINE AND SAMPLE OFFSETS ABOVE?
 
@@ -158,7 +201,10 @@ void imageToGround(double sample, double line) {
   double spacecraftY = -27264735.61516516; // SENSOR Y
   double spacecraftZ = 8536481.287414147; // SENSOR Z from isd
 
-  double f = 549.3027347624796; // focal length (mm)
+  focalPlaneX = vhat[0];
+  focalPlaneY = vhat[1];
+  f = vhat[2];
+
   double x = 1 * 
              ( m[0] * (focalPlaneX) + m[3] * (focalPlaneY) + m[6] * (-1 * f) ) /
              ( m[2] * (focalPlaneX) + m[5] * (focalPlaneY) + m[8] * (-1 * f) )
