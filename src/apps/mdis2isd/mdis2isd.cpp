@@ -1,6 +1,6 @@
 #include "mdis2isd.h"
 
-#include <iostream>
+#include <fstream>
 #include <iomanip>
 
 #include <QString>
@@ -56,32 +56,53 @@ namespace Isis {
   }
 
 
-  void mdis2isd::isdJSON(std::vector<std::pair<std::string,double> > * isdData,std::string sensorModel,
+
+
+
+
+
+  /**
+   * @brief mdis2isd::isdJSON  This function outputs the ISD file created by this
+   * application in JSON format.  It is very simple, and will need to be modified.
+   * The key-value appairs assume <string,double>, which might not be the case as
+   * the second value could be anything from a primitive type to an array of primitive
+   * types.
+   * @param isdList A ptr to a vector of key-value pairs storing the ISD values
+   * @param sensorModel The name of the sensor model.
+   * @param The output path and name for the JSON file.
+   */
+
+  void mdis2isd::isdJSON(std::vector<std::pair<std::string,double> > * isdList,std::string sensorModel,
                          std::string filePath){
 
-/*
+
     ofstream os;
-    os.open(filePath, ios::out);
+    os.open(filePath.c_str(), ofstream::out);
 
     os << "{" << endl;
-    os << "\"" <<sensorModel<<"\":"<<sensorModel;
-    os << modelName << endl;
+    os << "\"" <<"ISD_SENSOR_MODEL_NAME"<<"\":" << sensorModel << ",";
+
     os << setprecision(prec);
+    unsigned int nparams = isdList->size();
+    for (unsigned int i =0;i < nparams-1;i++) {
 
-    for (unsigned int i =0;i < isdList.size();i++) {
-
-      pair<string,double> isdNode=isdList[i];
-      os << isdNode.first << "\t\t" << isdNode.second << endl;
+      pair<string,double> isdNode=isdList->at(i);
+      os << "\"" << isdNode.first << "\":" << isdNode.second << ",";
     }
+
+     pair<string,double> lastNode=isdList->at(nparams-1);
+     os << "\"" << lastNode.first << "\":" << lastNode.second << "}";
+
 
     os.close();
 
 
-*/
-
   }
 
-
+  /**
+   * @brief mdis2isd:writeISD This function grabs the necessary Spice date from ISIS
+   * and outputs a simple ISD file.
+   */
 
   void mdis2isd::writeISD(){
 
@@ -317,6 +338,9 @@ namespace Isis {
     }
 
     os.close();
+
+
+    isdJSON(&isdList,modelName.toStdString(),"json.isd");
 
 
 
