@@ -16,8 +16,9 @@ vector<double> normalize(const vector<double> &v);
 
 int main() {
   
-  vector<double> i2g = imageToGround(500, 500, 1000);
-  cout << i2g[0] << endl;
+  vector<double> i2g = imageToGround(512, 512, 1000);
+  cout << "===== Intersection Point =====\n";
+  cout << fixed << i2g[0] << endl;
   cout << i2g[1] << endl;
   cout << i2g[2] << endl;
   
@@ -36,13 +37,6 @@ int main() {
  *                           If no intersection, returns a 3-element vector of 0's.
  */
 vector<double> imageToGround(double sample, double line, double height) {
-  double focalLength = 549.302734762479; // Will be grabbed from ISD.
-  
-  vector<double> spacecraftPosition(3);
-  
-  spacecraftPosition[0] = -6683432.694790688; // SENSOR X
-  spacecraftPosition[1] = -27264735.61516516; // SENSOR Y
-  spacecraftPosition[2] = 8536481.287414147; // SENSOR Z from isd
   
   const double transX[3] = {0.0, 0.014, 0.0}; // Grabbed from ISD.
   const double transY[3] = {0.0, 0.0, 0.014};
@@ -55,26 +49,62 @@ vector<double> imageToGround(double sample, double line, double height) {
   // Convert from sample/line to focal plane coordinates
   double focalPlaneX = transX[0] + (transX[1] * sample) + (transX[2] * line);
   double focalPlaneY = transY[0] + (transY[1] * sample) + (transY[2] * line);
+  cout << "===== Focal Plane =====\n";
   cout << "Focal plane x: " << focalPlaneX << endl;
-  cout << "Focal plane y: " << focalPlaneY << endl;
+  cout << "Focal plane y: " << focalPlaneY << endl << endl;
 
-  double majorAxis = 6051800; // mercury ellipsoid (ISD).
+  double majorAxis = 2439.7 * 1000; // mercury ellipsoid (ISD).
 
   // Determine the look direction of the camera in body-fixed coordinate system
   vector<double> direction(3);
   
-  direction[0] = focalPlaneX / 1000 - spacecraftPosition[0];
-  direction[1] = focalPlaneY / 1000 - spacecraftPosition[1];
-  direction[2] = focalLength / 1000 - spacecraftPosition[2];
+  double omega = 5*M_PI/4;
+  double phi = 6*M_PI/4;
+  double kappa = 0;
   
-  cout << "Direction: " << endl;
+  
+  const double sinw = sin(omega);
+  const double sinp = sin(phi);
+  const double sink = sin(kappa);
+  const double cosw = cos(omega);
+  const double cosp = cos(phi);
+  const double cosk = cos(kappa);
+
+  std::vector<double> rotationMatrix(9);
+  rotationMatrix[0] = cosp * cosk;
+  rotationMatrix[1] = cosw * sink + sinw * sinp * cosk;
+  rotationMatrix[2] = sinw * sink - cosw * sinp * cosk;
+  rotationMatrix[3] = -1 * cosp * sink;
+  rotationMatrix[4] = cosw * cosk - sinw * sinp * sink;
+  rotationMatrix[5] = sinw * cosk + cosw * sinp * sink;
+  rotationMatrix[6] = sinp;
+  rotationMatrix[7] = -1 * sinw * cosp;
+  rotationMatrix[8] = cosw * cosp;                             
+
+  std::vector<double> &m = rotationMatrix;
+  
+  double focalLength = 549.302734762479; // Will be grabbed from ISD.
+
+  
+  direction[0] = m[0] * focalPlaneX + m[1] * focalPlaneY + m[2] * focalLength;
+  direction[1] = m[3] * focalPlaneX + m[4] * focalPlaneY + m[5] * focalLength;
+  direction[2] = m[6] * focalPlaneX + m[7] * focalPlaneY + m[8] * focalLength;
+  
+  cout << "===== Direction: =====" << endl;
   cout << direction[0] << endl;
   cout << direction[1] << endl;
   cout << direction[2] << endl;
   cout << endl;
   
+  vector<double> spacecraftPosition(3);
+  
+  spacecraftPosition[0] = 2439.7 * 1001;//-64970.59667668573; // SENSOR X
+  spacecraftPosition[1] = 2439.7 * 1001;//62477.47193211249; // SENSOR Y
+  spacecraftPosition[2] = 0;//-2130.3884612457987; // SENSOR Z from isd
+
+  
   // Try to intersect.
-  intersect(spacecraftPosition, direction, majorAxis);
+  return intersect(spacecraftPosition, direction, majorAxis);
 }
 
 
@@ -103,7 +133,7 @@ vector<double> intersect(const vector<double> &point,
   newDirection[1] = direction[1] / radius;
   newDirection[2] = direction[2] / radius;
   
-  cout << "New Direction: " << endl;
+  cout << "===== Unit Direction: =====" << endl;
   cout << newDirection[0] << endl;
   cout << newDirection[1] << endl;
   cout << newDirection[2] << endl;
@@ -114,7 +144,7 @@ vector<double> intersect(const vector<double> &point,
   newPoint[1] = point[1] / radius;
   newPoint[2] = point[2] / radius;
   
-  cout << "New Point: " << endl;
+  cout << "===== Unit Point: =====" << endl;
   cout << newPoint[0] << endl;
   cout << newPoint[1] << endl;
   cout << newPoint[2] << endl;
@@ -147,11 +177,13 @@ vector<double> intersect(const vector<double> &point,
     // If vector perpendicular to look direction has magnitude > 1,
     // we are not looking at the target body (since the body is a "unit sphere")
     if (perpendicularMag > 1.0) {
+      cout << "No Intersection Missed Target\n";
       return intersectionPoint; // empty
     }
     
     // If looking away from the target body, there is no intersection.
     if (dot(newPointProj, newDirection) > 0.0) {
+      cout << "No Intersection Looking Away\n";
       return intersectionPoint; // empty
     }
     
@@ -202,6 +234,16 @@ vector<double> intersect(const vector<double> &point,
   intersectionPoint[1] = perpendicularV[1] + sign * scale * newDirectionNorm[1];
   intersectionPoint[2] = perpendicularV[2] + sign * scale * newDirectionNorm[2];
   
+  cout << "===== Unit Intersection Point =====\n";
+  cout << intersectionPoint[0] << endl;
+  cout << intersectionPoint[1] << endl;
+  cout << intersectionPoint[2] << endl << endl;
+  
+  // Rescale the intersectionPoint from unit sphere space to ellipsoid space
+  intersectionPoint[0] *= radius;
+  intersectionPoint[1] *= radius;
+  intersectionPoint[2] *= radius;
+
   return intersectionPoint;
 }
 
