@@ -431,4 +431,4 @@ std::vector<double> MdisNacSensorModel::getCrossCovarianceMatrix(
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
                    "MdisNacSensorModel::getCrossCovarianceMatrix");
-    }
+}
