@@ -82,7 +82,7 @@ class MdisNacSensorModel : public csm::RasterGM {
     virtual std::vector<double> getUnmodeledCrossCovariance(const csm::ImageCoord &pt1, 
                                                             const csm::ImageCoord &pt2) const;
 
-    // IMPLEMENT MODEL PURE VIRTUAL                                                            
+    // IMPLEMENT MODEL PURE VIRTUALS                                                            
     //---
     // Basic model information
     //---
@@ -209,7 +209,8 @@ class MdisNacSensorModel : public csm::RasterGM {
       //  If the argument state string is empty, the model remains unchanged.
       //<
  
-    // IMPLEMENT GEOMETRICMODEL PURE VIRTUAL
+    // IMPLEMENT GEOMETRICMODEL PURE VIRTUALS
+    // See GeometricModel.h for documentation
     virtual csm::EcefCoord getReferencePoint() const;
     virtual void setReferencePoint(const csm::EcefCoord &groundPt);
     virtual int getNumParameters() const;

@@ -277,6 +277,7 @@ std::string MdisNacSensorModel::getReferenceDateAndTime() const {
 
 
 std::string MdisNacSensorModel::getModelState() const {
+  // TEMPORARY
   /* commented out for testing the gtest framework
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
