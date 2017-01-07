@@ -1,0 +1,63 @@
+{
+    "boresight": [
+        0.0,
+        0.0,
+        1.0
+    ],
+    "ccd_center": 512.5,
+    "ephemeris_time": 253624729.26289144,
+    "focal_length": 549.1178195372703,
+    "focal_length_epsilon": 0.5,
+    "ifov": 25.44,
+    "instrument_id": "MDIS-NAC",
+    "itrans_line": 0.0,
+    "itrans_sample": 0.0,
+    "kappa": null,
+    "max_elevation": 1.0,
+    "min_elevation": -1.0,
+    "nlines": 1024,
+    "nsamples": 1024,
+    "odt_x": [
+        0.0,
+        1.001854269623802,
+        0.0,
+        0.0,
+        -0.0005094440474941111,
+        0.0,
+        1.004010471468856e-05,
+        0.0,
+        1.004010471468856e-05
+    ],
+    "odt_y": [
+        0.0,
+        0.0,
+        1.0,
+        0.0009060010594996751,
+        0.0,
+        0.0003574842626620758,
+        0.0,
+        1.004010471468856e-05,
+        0.0
+    ],
+    "omega": null,
+    "orginal_half_samples": 512.0,
+    "original_half_lines": 512.0,
+    "phi": null,
+    "pixel_pitch": 0.014,
+    "spacecraft_name": "Messenger",
+    "starting_detector_line": 1.0,
+    "starting_detector_sample": 9.0,
+    "transx": [
+        0.0,
+        0.014,
+        0.0
+    ],
+    "transy": [
+        0.0,
+        0.0,
+        0.014
+    ],
+    "x_sensor_origin": null,
+    "y_sensor_origin": null,
+    "z_sensor_origin": null
+}
