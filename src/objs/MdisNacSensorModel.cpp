@@ -85,7 +85,8 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
   const double cosp = std::cos(m_phi);
   const double cosk = std::cos(m_kappa);
 
-  // Rotation matrix taken from Introduction to Photogrammetry by Edward M. Mikhail
+  // Rotation matrix taken from Introduction to Mordern Photogrammetry by 
+  // Edward M. Mikhail, et al., p. 373
   std::vector<double> m(9);
   m[0] = cosp * cosk;
   m[1] = cosw * sink + sinw * sinp * cosk;
