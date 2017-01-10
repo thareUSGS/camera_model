@@ -1,8 +1,10 @@
 #include "MdisPlugin.h"
 
+#include <cstdlib>
 #include <string>
 
 #include <csm/csm.h>
+#include <csm/Error.h>
 #include <csm/Plugin.h>
 #include <csm/Warning.h>
 
@@ -69,6 +71,11 @@ bool MdisPlugin::canModelBeConstructedFromState(const std::string &modelName,
 bool MdisPlugin::canModelBeConstructedFromISD(const csm::Isd &imageSupportData,
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
+                                                
+  if (modelName != MdisNacSensorModel::_SENSOR_MODEL_NAME) {
+    return false;
+  }
+  
   return true;
 }
 
@@ -82,7 +89,176 @@ csm::Model *MdisPlugin::constructModelFromState(const std::string&modelState,
 csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
-  return NULL;
+   
+  // Check if the sensor model can be constructed from ISD given the model name 
+  if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
+    throw csm::Error(csm::Error::ISD_NOT_SUPPORTED, 
+                     "Sensor model support data provided is not supported by this plugin",
+                     "MdisPlugin::constructModelFromISD");
+  }
+
+  MdisNacSensorModel *sensorModel = new MdisNacSensorModel();
+  
+  // Keep track of necessary keywords that are missing from the ISD.
+  std::vector<std::string> missingKeywords;
+
+  sensorModel->m_startingDetectorSample =
+      atof(imageSupportData.param("starting_detector_sample").c_str());
+  sensorModel->m_startingDetectorLine =
+      atof(imageSupportData.param("starting_detector_line").c_str());
+
+  sensorModel->m_targetName = imageSupportData.param("target_name");
+
+  sensorModel->m_ifov = atof(imageSupportData.param("ifov").c_str());
+
+  sensorModel->m_instrumentID = imageSupportData.param("instrument_id");
+  if (imageSupportData.param("instrument_id") == "") {
+    missingKeywords.push_back("instrument_id");
+  }
+
+  sensorModel->m_focalLength = atof(imageSupportData.param("focal_length").c_str());
+  if (imageSupportData.param("focal_length") == "") {
+    missingKeywords.push_back("focal_length");
+  }
+  sensorModel->m_focalLengthEpsilon =
+      atof(imageSupportData.param("focal_length_epsilon").c_str());
+
+  sensorModel->m_spacecraftPosition[0] =
+      atof(imageSupportData.param("x_sensor_origin").c_str());
+  sensorModel->m_spacecraftPosition[1] =
+      atof(imageSupportData.param("y_sensor_origin").c_str());
+  sensorModel->m_spacecraftPosition[2] =
+      atof(imageSupportData.param("z_sensor_origin").c_str());
+  if (imageSupportData.param("x_sensor_origin") == "") {
+    missingKeywords.push_back("x_sensor_origin");
+  }
+  if (imageSupportData.param("y_sensor_origin") == "") {
+    missingKeywords.push_back("y_sensor_origin");
+  }
+  if (imageSupportData.param("z_sensor_origin") == "") {
+    missingKeywords.push_back("z_sensor_origin");
+  }
+
+  sensorModel->m_odtX[0] = atof(imageSupportData.param("odt_x", 0).c_str());
+  sensorModel->m_odtX[1] = atof(imageSupportData.param("odt_x", 1).c_str());
+  sensorModel->m_odtX[2] = atof(imageSupportData.param("odt_x", 2).c_str());
+  sensorModel->m_odtX[3] = atof(imageSupportData.param("odt_x", 3).c_str());
+  sensorModel->m_odtX[4] = atof(imageSupportData.param("odt_x", 4).c_str());
+  sensorModel->m_odtX[5] = atof(imageSupportData.param("odt_x", 5).c_str());
+  sensorModel->m_odtX[6] = atof(imageSupportData.param("odt_x", 6).c_str());
+  sensorModel->m_odtX[7] = atof(imageSupportData.param("odt_x", 7).c_str());
+  sensorModel->m_odtX[8] = atof(imageSupportData.param("odt_x", 8).c_str());
+
+  sensorModel->m_odtY[0] = atof(imageSupportData.param("odt_y", 0).c_str());
+  sensorModel->m_odtY[1] = atof(imageSupportData.param("odt_y", 1).c_str());
+  sensorModel->m_odtY[2] = atof(imageSupportData.param("odt_y", 2).c_str());
+  sensorModel->m_odtY[3] = atof(imageSupportData.param("odt_y", 3).c_str());
+  sensorModel->m_odtY[4] = atof(imageSupportData.param("odt_y", 4).c_str());
+  sensorModel->m_odtY[5] = atof(imageSupportData.param("odt_y", 5).c_str());
+  sensorModel->m_odtY[6] = atof(imageSupportData.param("odt_y", 6).c_str());
+  sensorModel->m_odtY[7] = atof(imageSupportData.param("odt_y", 7).c_str());
+  sensorModel->m_odtY[8] = atof(imageSupportData.param("odt_y", 8).c_str());
+
+  sensorModel->m_ccdCenter = atof(imageSupportData.param("ccd_center").c_str());
+
+  sensorModel->m_originalHalfLines = atof(imageSupportData.param("original_half_lines").c_str());
+  sensorModel->m_spacecraftName = imageSupportData.param("spacecraft_name");
+
+  sensorModel->m_pixelPitch = atof(imageSupportData.param("pixel_pitch").c_str());
+
+  sensorModel->m_iTransS[0] = atof(imageSupportData.param("itrans_sample", 0).c_str());
+  sensorModel->m_iTransS[1] = atof(imageSupportData.param("itrans_sample", 1).c_str());
+  sensorModel->m_iTransS[2] = atof(imageSupportData.param("itrans_sample", 2).c_str());
+  if (imageSupportData.param("itrans_sample", 0) == "") {
+    missingKeywords.push_back("itrans_sample needs 3 elements");
+  }
+  else if (imageSupportData.param("itrans_sample", 1) == "") {
+    missingKeywords.push_back("itrans_sample needs 3 elements");
+  }
+  else if (imageSupportData.param("itrans_sample", 2) == "") {
+    missingKeywords.push_back("itrans_sample needs 3 elements");
+  }
+  
+  sensorModel->m_ephemerisTime = atof(imageSupportData.param("ephemeris_time").c_str());
+  if (imageSupportData.param("ephemeris_time") == "") {
+    missingKeywords.push_back("ephemeris_time");
+  }
+
+  sensorModel->m_originalHalfSamples =
+      atof(imageSupportData.param("original_half_samples").c_str());
+
+  sensorModel->m_boresight[0] = atof(imageSupportData.param("boresight", 0).c_str());
+  sensorModel->m_boresight[1] = atof(imageSupportData.param("boresight", 1).c_str());
+  sensorModel->m_boresight[2] = atof(imageSupportData.param("boresight", 2).c_str());
+
+  sensorModel->m_iTransL[0] = atof(imageSupportData.param("itrans_line", 0).c_str());
+  sensorModel->m_iTransL[1] = atof(imageSupportData.param("itrans_line", 1).c_str());
+  sensorModel->m_iTransL[2] = atof(imageSupportData.param("itrans_line", 2).c_str());
+  if (imageSupportData.param("itrans_line", 0) == "") {
+    missingKeywords.push_back("itrans_line needs 3 elements");
+  }
+  else if (imageSupportData.param("itrans_line", 1) == "") {
+    missingKeywords.push_back("itrans_line needs 3 elements");
+  }
+  else if (imageSupportData.param("itrans_line", 2) == "") {
+    missingKeywords.push_back("itrans_line needs 3 elements");
+  }
+  
+  sensorModel->m_nLines = atoi(imageSupportData.param("nlines").c_str());
+  sensorModel->m_nSamples = atoi(imageSupportData.param("nsamples").c_str());
+  if (imageSupportData.param("nlines") == "") {
+    missingKeywords.push_back("nlines");
+  }
+  if (imageSupportData.param("nsamples") == "") {
+    missingKeywords.push_back("nsamples");
+  }
+  
+  sensorModel->m_transY[0] = atof(imageSupportData.param("transy", 0).c_str());
+  sensorModel->m_transY[1] = atof(imageSupportData.param("transy", 1).c_str());
+  sensorModel->m_transY[2] = atof(imageSupportData.param("transy", 2).c_str());
+  if (imageSupportData.param("transy", 0) == "") {
+    missingKeywords.push_back("transy");
+  }
+  else if (imageSupportData.param("transy", 1) == "") {
+    missingKeywords.push_back("transy");
+  }
+  else if (imageSupportData.param("transy", 2) == "") {
+    missingKeywords.push_back("transy");
+  }
+  
+  sensorModel->m_transX[0] = atof(imageSupportData.param("transx", 0).c_str());
+  sensorModel->m_transX[1] = atof(imageSupportData.param("transx", 1).c_str());
+  sensorModel->m_transX[2] = atof(imageSupportData.param("transx", 2).c_str());
+  if (imageSupportData.param("transx", 0) == "") {
+    missingKeywords.push_back("transx");
+  }
+  else if (imageSupportData.param("transx", 1) == "") {
+    missingKeywords.push_back("transx");
+  }
+  else if (imageSupportData.param("transx", 2) == "") {
+    missingKeywords.push_back("transx");
+  }
+  
+  // If we are missing necessary keywords from ISD, we cannot create a valid sensor model.
+  if (missingKeywords.size() != 0) {
+
+    std::string errorMessage = "ISD is missing the necessary keywords: [";
+  
+    for (int i = 0; i < missingKeywords.size(); i++) {
+      if (i == missingKeywords.size() - 1) {
+        errorMessage += missingKeywords[i] + "]";
+      }
+      else {
+        errorMessage += missingKeywords[i] + ", ";
+      }
+    }
+    
+    throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                     errorMessage,
+                     "MdisPlugin::constructModelFromISD");
+  }
+                                                
+  return sensorModel;
 }
 
 
