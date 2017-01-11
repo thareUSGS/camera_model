@@ -25,6 +25,8 @@ namespace csm {
 class MDIS_EXPORT_API MdisPlugin : public csm::Plugin {
 
   public:
+    MdisPlugin();
+    ~MdisPlugin();
 
     virtual std::string getPluginName() const;
     virtual std::string getManufacturer() const;
@@ -55,9 +57,6 @@ class MDIS_EXPORT_API MdisPlugin : public csm::Plugin {
                                                csm::WarningList *warnings = NULL) const;
 
   private:
-    MdisPlugin();
-    ~MdisPlugin();
-
     static const MdisPlugin m_registeredPlugin;
 
     static const std::string m_pluginName;
