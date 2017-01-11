@@ -14,6 +14,8 @@ class MdisPluginTest : public ::testing::Test {
     }
     
     MdisPlugin defaultMdisPlugin;
+  
+    // TODO: change this to getting the model name from the MdisNacSensorModel
     const std::string mdisNacName = defaultMdisPlugin.getModelName(0);
   
 };
