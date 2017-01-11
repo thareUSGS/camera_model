@@ -9,6 +9,7 @@
 
 
 class MdisNacSensorModel : public csm::RasterGM {
+  // MdisPlugin needs to access private members
   friend class MdisPlugin;
   
   public:
