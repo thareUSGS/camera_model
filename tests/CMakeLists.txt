@@ -1,7 +1,7 @@
 # Need line below for EXPECT_THROW to avoid:
 # "warning: non-static data member initializers only 
 # available with -std=c++11 or -std=gnu++11"
-add_definitions(-std=c++11)
+# add_definitions(-std=c++11)
 
 ADD_EXECUTABLE(mdisset mdisset.cpp)
 TARGET_INCLUDE_DIRECTORIES(mdisset PUBLIC "${CMAKE_SOURCE_DIR}/include/csm")
