@@ -1,4 +1,7 @@
+#include <MdisPlugin.h>
 #include <MdisNacSensorModel.h>
+
+#include <csm/Isd.h>
 
 #include <gtest/gtest.h>
 
@@ -26,9 +29,68 @@ class MdisNacSensorModelTest : public ::testing::Test {
   protected:
     // Per test-case setup and teardown (e.g. once for this MdisNacSensorModelTest)
     static void SetUpTestCase() {
+      isd = new csm::Isd();
+      isd->addParam("boresight", "0.0");
+      isd->addParam("boresight", "0.0");
+      isd->addParam("boresight", "1.0");
+      isd->addParam("ccd_center", "512.5");
+      isd->addParam("ephemeris_time", "418855170.493");
+      isd->addParam("focal_length", "549.117819537");
+      isd->addParam("ifov", "25.44");
+      isd->addParam("instrument_id", "MDIS_NAC");
+      isd->addParam("itrans_line", "0.0");
+      isd->addParam("itrans_line", "0.0");
+      isd->addParam("itrans_line", "71.42857143");
+      isd->addParam("itrans_sample", "0.0");
+      isd->addParam("itrans_sample", "71.42857143");
+      isd->addParam("itrans_sample", "0.0");
+      isd->addParam("nlines", "1024");
+      isd->addParam("nsamples", "1024");
+      isd->addParam("odt_x", "0.0");
+      isd->addParam("odt_x", "0.0");
+      isd->addParam("odt_x", "0.0");
+      isd->addParam("odt_x", "0.0");
+      isd->addParam("odt_x", "0.0");
+      isd->addParam("odt_x", "0.0");
+      isd->addParam("odt_x", "0.0");
+      isd->addParam("odt_x", "0.0");
+      isd->addParam("odt_x", "0.0");
+      isd->addParam("odt_y", "0.0");
+      isd->addParam("odt_y", "0.0");
+      isd->addParam("odt_y", "0.0");
+      isd->addParam("odt_y", "0.0");
+      isd->addParam("odt_y", "0.0");
+      isd->addParam("odt_y", "0.0");
+      isd->addParam("odt_y", "0.0");
+      isd->addParam("odt_y", "0.0");
+      isd->addParam("odt_y", "0.0");
+      isd->addParam("omega", "2.33344166314");
+      isd->addParam("phi", "0.606364919159");
+      isd->addParam("kappa", "0.704740691838");
+      isd->addParam("original_half_samples", "512");
+      isd->addParam("original_half_lines", "512");
+      isd->addParam("pixel_pitch", "0.014");
+      isd->addParam("semi_major_axis", "2439.4");
+      isd->addParam("semi_minor_axis", "2439.4");
+      isd->addParam("spacecraft_name", "Messenger");
+      isd->addParam("starting_detector_line", "1");
+      isd->addParam("starting_detector_sample", "9");
+      isd->addParam("target_name", "Mercury");
+      isd->addParam("transx", "0.0");
+      isd->addParam("transx", "0.014");
+      isd->addParam("transx", "0.0");
+      isd->addParam("transy", "0.0");
+      isd->addParam("transy", "0.0");
+      isd->addParam("transy", "0.014");
+      isd->addParam("x_sensor_origin", "1728357.70312");
+      isd->addParam("y_sensor_origin", "-2088409.0061");
+      isd->addParam("z_sensor_origin", "2082873.92806");
     }
     
-    static void TearDownTestCase() {}
+    static void TearDownTestCase() {
+      delete isd;
+      isd = NULL;
+    }
     
     // Per test setup and teardown (e.g. each TEST_F)
     virtual void SetUp() {
@@ -37,10 +99,53 @@ class MdisNacSensorModelTest : public ::testing::Test {
 
     virtual void TearDown() {}
 
-    MdisNacSensorModel defaultMdisNac;
+    static csm::Isd *isd;
+    
     double tolerance;
+    MdisPlugin mdisPlugin;
+    MdisNacSensorModel defaultMdisNac;
     TestableMdisNacSensorModel testMath;
 };
+
+
+csm::Isd *MdisNacSensorModelTest::isd = NULL;
+
+
+/* 
+ * Test imageToGround - truth extracted as follows:
+ * setisis isis3
+ * qview /work/projects/IAA_camera/data/EN100790102M.cub
+ * F (selects "Find Tool")
+ * On top toolbar, select "Find Point"
+ * Type in 512.5, 512.5 for Sample/Line (ISIS3 pixel center = 1,1)
+ * Click "Record Point"
+ * Check "XYZ" -> { 1132.18, -1597.75, 1455.66 }
+ */
+TEST_F(MdisNacSensorModelTest, imageToGround1) {
+  // CSM Line/Sample center = 512, 512
+  csm::ImageCoord point(512.0, 512.0);
+  double height = 0.0;
+  
+  // Create a model from the ISD so we can test a valid image.
+  std::string modelName = MdisNacSensorModel::_SENSOR_MODEL_NAME;
+  csm::Model *validModel = mdisPlugin.constructModelFromISD(*isd, modelName);
+  // We could static_cast, but may be hard to debug if it doesn't correctly cast.
+  MdisNacSensorModel *mdisModel = dynamic_cast<MdisNacSensorModel *>(validModel);
+  
+  // Fatal failure if the downcast doesn't work
+  if (!mdisModel) {
+    FAIL() << "Could not downcast Model* to MdisNacSensorModel*.";
+  }
+  
+  csm::EcefCoord xyz = mdisModel->imageToGround(point, height);
+  double truth[] = { 1132.18*1000, -1597.75*1000, 1455.66*1000 };
+  EXPECT_EQ(truth[0], xyz.x);
+  EXPECT_EQ(truth[1], xyz.y);
+  EXPECT_EQ(truth[2], xyz.z);
+  
+  // Remove the memory we took ownership of.
+  delete mdisModel;
+}
 
 
 // Tests the getModelState() method with a default constructed MdisNacSensorModel.
