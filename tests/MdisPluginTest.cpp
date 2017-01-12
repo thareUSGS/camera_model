@@ -1,4 +1,5 @@
 #include <MdisPlugin.h>
+#include <MdisNacSensorModel.h>
 
 #include <csm/Error.h>
 #include <csm/Isd.h>
@@ -11,12 +12,12 @@ class MdisPluginTest : public ::testing::Test {
   
   protected:
     virtual void SetUp() {
+      mdisNacName = MdisNacSensorModel::_SENSOR_MODEL_NAME;
     }
     
     MdisPlugin defaultMdisPlugin;
   
-    // TODO: change this to getting the model name from the MdisNacSensorModel
-    const std::string mdisNacName = defaultMdisPlugin.getModelName(0);
+    std::string mdisNacName;
   
 };
 
