@@ -22,8 +22,3 @@ class MdisNacSensorModelTest : public ::testing::Test {
 TEST_F(MdisNacSensorModelTest, getModelStateDefault) {
   EXPECT_EQ(defaultMdisNac.getModelState(), std::string());
 }
-
-// Just a test to see if gtest is set up correctly.
-TEST_F(MdisNacSensorModelTest, getModelStateChanged) {
-  EXPECT_EQ(defaultMdisNac.getModelState(), std::string("blah"));
-}
