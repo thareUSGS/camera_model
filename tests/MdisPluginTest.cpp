@@ -1,4 +1,5 @@
 #include <MdisPlugin.h>
+#include <MdisNacSensorModel.h>
 
 #include <csm/Error.h>
 #include <csm/Isd.h>
@@ -11,12 +12,12 @@ class MdisPluginTest : public ::testing::Test {
   
   protected:
     virtual void SetUp() {
+      mdisNacName = MdisNacSensorModel::_SENSOR_MODEL_NAME;
     }
     
     MdisPlugin defaultMdisPlugin;
   
-    // TODO: change this to getting the model name from the MdisNacSensorModel
-    const std::string mdisNacName = defaultMdisPlugin.getModelName(0);
+    std::string mdisNacName;
   
 };
 
@@ -70,9 +71,4 @@ TEST_F(MdisPluginTest, constructModelFromISD) {
     csm::Model *model = defaultMdisPlugin.constructModelFromISD(catSensor, "catCamera");
   },
   csm::Error);
-}
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }
