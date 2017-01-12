@@ -250,38 +250,9 @@ class MdisNacSensorModel : public csm::RasterGM {
         const GeometricModelList &otherModels = GeometricModelList()) const;          
         
     static const std::string _SENSOR_MODEL_NAME;
-                                                            
-  private:
+
     
-    double m_transX[3];
-    double m_transY[3];
-    double m_majorAxis;
-    double m_omega;
-    double m_phi;
-    double m_kappa;
-    double m_focalLength;
-    double m_spacecraftPosition[3];
-    double m_ccdCenter;
-    double m_startingDetectorSample;
-    double m_startingDetectorLine;
-    std::string m_targetName;
-    double m_ifov;
-    std::string m_instrumentID;
-    double m_focalLengthEpsilon;
-    double m_odtX[9];
-    double m_odtY[9];
-    double m_originalHalfLines;
-    std::string m_spacecraftName;
-    double m_pixelPitch;
-    double m_iTransS[3];
-    double m_ephemerisTime;
-    double m_originalHalfSamples;
-    double m_boresight[3];
-    double m_iTransL[3];
-    int m_nLines;
-    int m_nSamples;
-    
-    
+  protected:
     /**
      * Given a spacecraft position in body-fixed coordinates, determine if the look direction vector
      * intersects the surface of the target body.
@@ -336,8 +307,37 @@ class MdisNacSensorModel : public csm::RasterGM {
      * Normalizes the vector (e.g. returns a unit vector).
      */
     std::vector<double> normalize(const std::vector<double> &v) const;
-                                                            
+          
     
+  private:
+    
+    double m_transX[3];
+    double m_transY[3];
+    double m_majorAxis;
+    double m_omega;
+    double m_phi;
+    double m_kappa;
+    double m_focalLength;
+    double m_spacecraftPosition[3];
+    double m_ccdCenter;
+    double m_startingDetectorSample;
+    double m_startingDetectorLine;
+    std::string m_targetName;
+    double m_ifov;
+    std::string m_instrumentID;
+    double m_focalLengthEpsilon;
+    double m_odtX[9];
+    double m_odtY[9];
+    double m_originalHalfLines;
+    std::string m_spacecraftName;
+    double m_pixelPitch;
+    double m_iTransS[3];
+    double m_ephemerisTime;
+    double m_originalHalfSamples;
+    double m_boresight[3];
+    double m_iTransL[3];
+    int m_nLines;
+    int m_nSamples;    
 };
 
 #endif
