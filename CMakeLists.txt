@@ -5,7 +5,7 @@ include(CheckCXXCompilerFlag)
 # Define the version and project name
 SET(CameraModel_Version_Major 0)
 SET(CameraModel_Version_Minor 1)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 PROJECT(CameraModel)
 
