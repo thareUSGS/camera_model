@@ -251,8 +251,18 @@ class MdisNacSensorModel : public csm::RasterGM {
         
     static const std::string _SENSOR_MODEL_NAME;
 
+
+                                                            
+
     
   protected:
+
+    virtual bool setFocalPlane(double dx,double dy,double &undistortedX,double &undistortedY) const;
+    virtual void distortionFunction(double ux, double uy, double &dx, double &dy) const;
+    virtual void distortionJacobian(double x, double y, double &Jxx,
+                                    double &Jxy, double &Jyx, double &Jyy) const;
+
+    
     /**
      * Given a spacecraft position in body-fixed coordinates, determine if the look direction vector
      * intersects the surface of the target body.

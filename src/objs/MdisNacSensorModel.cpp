@@ -28,12 +28,214 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_spacecraftPosition[2] = -2130.3884612457987;
   
   m_ccdCenter = 512.5;
-  
+
+
+  m_odtX[0]=0.0;
+  m_odtX[1]=1.0020558791381;
+  m_odtX[2]=0.0;
+  m_odtX[3]=0.0;
+  m_odtX[4]=-5.44874222271292e-04;
+  m_odtX[5]=0.0;
+  m_odtX[6]=6.59749881186269e-06;
+  m_odtX[7]=0.0;
+  m_odtX[8]=6.68312905601468e-06;
+  m_odtX[9]=0.0;
+
+  m_odtY[0]=-1.365797535954e-05;
+  m_odtY[1]=0.0;
+  m_odtY[2]=1.0;
+  m_odtY[3]=8.85544334965699e-04;
+  m_odtY[4]=0.0;
+  m_odtY[5]=3.33893913833148e-04;
+  m_odtY[6]=0.0;
+  m_odtY[7]=7.74756721313425e-06;
+  m_odtY[8]=0.0;
+  m_odtY[9]=7.79484564042716e-06;
+
 }
 
 
 MdisNacSensorModel::~MdisNacSensorModel() {
   
+}
+
+
+
+
+
+
+/**
+ * @brief Compute undistorted focal plane x/y.
+ *
+ * Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
+ * coordinate. The undistorted coordinates are solved for using the Newton-Raphson
+ * method for root-finding if the distortionFunction method is invoked.
+ *
+ * @param dx distorted focal plane x in millimeters
+ * @param dy distorted focal plane y in millimeters
+ * @param undistortedX The undistorted x coordinate, in millimeters.
+ * @param undistortedY The undistorted y coordinate, in millimeters.
+ *
+ * @return if the conversion was successful
+ * @todo Review the tolerance and maximum iterations of the root-
+ *       finding algorithm.
+ * @todo Review the handling of non-convergence of the root-finding
+ *       algorithm.
+ * @todo Add error handling for near-zero determinant.
+*/
+bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
+                                       double &undistortedX,
+                                       double &undistortedY ) const {
+
+
+  // Solve the distortion equation using the Newton-Raphson method.
+  // Set the error tolerance to about one millionth of a NAC pixel.
+  const double tol = 1.4E-5;
+
+  // The maximum number of iterations of the Newton-Raphson method.
+  const int maxTries = 20;
+
+  double x;
+  double y;
+  double fx;
+  double fy;
+  double Jxx;
+  double Jxy;
+  double Jyx;
+  double Jyy;
+
+  // Initial guess at the root
+  x = dx;
+  y = dy;
+
+  distortionFunction(x, y, fx, fy);
+
+  for (int count = 1; ((fabs(fx) + fabs(fy)) > tol) && (count < maxTries); count++) {
+
+    this->distortionFunction(x, y, fx, fy);
+
+    fx = dx - fx;
+    fy = dy - fy;
+
+    distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
+
+    double determinant = Jxx * Jyy - Jxy * Jyx;
+    if (determinant < 1E-6) {
+      //
+      // Near-zero determinant. Add error handling here.
+      //
+      //-- Just break out and return with no convergence
+      break;
+    }
+
+    x = x + (Jyy * fx - Jxy * fy) / determinant;
+    y = y + (Jxx * fy - Jyx * fx) / determinant;
+  }
+
+  if ( (fabs(fx) + fabs(fy)) <= tol) {
+    // The method converged to a root.
+    undistortedX = x;
+    undistortedY = y;
+  }
+  else {
+    // The method did not converge to a root within the maximum
+    // number of iterations. Return with no distortion.
+    undistortedX = dx;
+    undistortedY = dy;
+  }
+
+  return true;
+
+}
+
+
+
+/**
+ * @description Jacobian of the distortion function. The Jacobian was computed
+ * algebraically from the function described in the distortionFunction
+ * method.
+ *
+ * @param x
+ * @param y
+ * @param Jxx  Partial_xx
+ * @param Jxy  Partial_xy
+ * @param Jyx  Partial_yx
+ * @param Jyy  Partial_yy
+ */
+void MdisNacSensorModel::distortionJacobian(double x, double y, double &Jxx, double &Jxy,
+                                            double &Jyx, double &Jyy) const {
+
+  double d_dx[10];
+  d_dx[0] = 0;
+  d_dx[1] = 1;
+  d_dx[2] = 0;
+  d_dx[3] = 2 * x;
+  d_dx[4] = y;
+  d_dx[5] = 0;
+  d_dx[6] = 3 * x * x;
+  d_dx[7] = 2 * x * y;
+  d_dx[8] = y * y;
+  d_dx[9] = 0;
+  double d_dy[10];
+  d_dy[0] = 0;
+  d_dy[1] = 0;
+  d_dy[2] = 1;
+  d_dy[3] = 0;
+  d_dy[4] = x;
+  d_dy[5] = 2 * y;
+  d_dy[6] = 0;
+  d_dy[7] = x * x;
+  d_dy[8] = 2 * x * y;
+  d_dy[9] = 3 * y * y;
+
+  Jxx = 0.0;
+  Jxy = 0.0;
+  Jyx = 0.0;
+  Jyy = 0.0;
+
+  for (int i = 0; i < 10; i++) {
+    Jxx = Jxx + d_dx[i] * m_odtX[i];
+    Jxy = Jxy + d_dy[i] * m_odtX[i];
+    Jyx = Jyx + d_dx[i] * m_odtY[i];
+    Jyy = Jyy + d_dy[i] * m_odtY[i];
+  }
+
+
+}
+
+
+/**
+ * @description Compute distorted focal plane (dx,dy) coordinate  given an undistorted focal
+ * plane (ux,uy) coordinate. This describes the third order Taylor approximation to the
+ * distortion model.
+ *
+ * @param ux Undistored x
+ * @param uy Undistored y
+ * @param dx Result distorted x
+ * @param dy Result distorted y
+ */
+void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, double &dy) const {
+
+  double f[10];
+  f[0] = 1;
+  f[1] = ux;
+  f[2] = uy;
+  f[3] = ux * ux;
+  f[4] = ux * uy;
+  f[5] = uy * uy;
+  f[6] = ux * ux * ux;
+  f[7] = ux * ux * uy;
+  f[8] = ux * uy * uy;
+  f[9] = uy * uy * uy;
+
+  dx = 0.0;
+  dy = 0.0;
+
+  for (int i = 0; i < 10; i++) {
+    dx = dx + f[i] * m_odtX[i];
+    dy = dy + f[i] * m_odtY[i];
+  }
+
 }
 
 
@@ -73,9 +275,16 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
   sample -= m_ccdCenter - 0.5; // ISD needs a center sample in CSM coord
   line -= m_ccdCenter - 0.5; // ISD needs a center line in CSM coord (.5 .5 pixel centers)
   
-  // Convert from sample/line to focal plane coordinates
+  // Convert from sample/line to focal plane coordinates (in mm)
   double focalPlaneX = m_transX[0] + (m_transX[1] * sample) + (m_transX[2] * line);
   double focalPlaneY = m_transY[0] + (m_transY[1] * sample) + (m_transY[2] * line);
+
+  double undistortedFocalPlaneX=0.0;
+  double undistortedFocalPlaneY=0.0;
+
+  //SetFocalPlane(focalPlaneX,focalPlaneY,&undistortedFocalPlaneX,&undistortedFocalPlaneY);
+
+
   
   // Trigonometric functions for rotation matrix
   const double sinw = std::sin(m_omega);
@@ -100,9 +309,9 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
   
   // Multiply the focal vector to the rotation matrix to get the direction of the camera
   std::vector<double> direction(3);
-  direction[0] = m[0] * focalPlaneX + m[1] * focalPlaneY + m[2] * m_focalLength;
-  direction[1] = m[3] * focalPlaneX + m[4] * focalPlaneY + m[5] * m_focalLength;
-  direction[2] = m[6] * focalPlaneX + m[7] * focalPlaneY + m[8] * m_focalLength;
+  direction[0] = m[0] * undistortedFocalPlaneX + m[1] * undistortedFocalPlaneX + m[2] * m_focalLength;
+  direction[1] = m[3] * undistortedFocalPlaneX + m[4] * undistortedFocalPlaneX + m[5] * m_focalLength;
+  direction[2] = m[6] * undistortedFocalPlaneX + m[7] * undistortedFocalPlaneX + m[8] * m_focalLength;
   
   // Save the spacecraft position as a vector
   std::vector<double> spacecraftPosition(3);
