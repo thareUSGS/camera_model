@@ -250,44 +250,18 @@ class MdisNacSensorModel : public csm::RasterGM {
         const GeometricModelList &otherModels = GeometricModelList()) const;          
         
     static const std::string _SENSOR_MODEL_NAME;
-protected:
-    virtual bool SetFocalPlane(double dx,double dy,double *x,double *y) const;
-    virtual void distortionFunction(double ux, double uy, double *dx, double *dy) const;
-    virtual void distortionJacobian(double x, double y, double *Jxx,
-                                    double *Jxy, double *Jyx, double *Jyy) const;
 
 
                                                             
-  private:
+
     
-    double m_transX[3];
-    double m_transY[3];
-    double m_majorAxis;
-    double m_omega;
-    double m_phi;
-    double m_kappa;
-    double m_focalLength;
-    double m_spacecraftPosition[3];
-    double m_ccdCenter;
-    double m_startingDetectorSample;
-    double m_startingDetectorLine;
-    std::string m_targetName;
-    double m_ifov;
-    std::string m_instrumentID;
-    double m_focalLengthEpsilon;
-    double m_odtX[10];
-    double m_odtY[10];
-    double m_originalHalfLines;
-    std::string m_spacecraftName;
-    double m_pixelPitch;
-    double m_iTransS[3];
-    double m_ephemerisTime;
-    double m_originalHalfSamples;
-    double m_boresight[3];
-    double m_iTransL[3];
-    int m_nLines;
-    int m_nSamples;
-    
+  protected:
+
+     virtual bool SetFocalPlane(double dx,double dy,double *x,double *y) const;
+     virtual void distortionFunction(double ux, double uy, double *dx, double *dy) const;
+     virtual void distortionJacobian(double x, double y, double *Jxx,
+                                                         double *Jxy, double *Jyx, double *Jyy) const;
+
     
     /**
      * Given a spacecraft position in body-fixed coordinates, determine if the look direction vector
@@ -343,8 +317,37 @@ protected:
      * Normalizes the vector (e.g. returns a unit vector).
      */
     std::vector<double> normalize(const std::vector<double> &v) const;
-                                                            
+          
     
+  private:
+    
+    double m_transX[3];
+    double m_transY[3];
+    double m_majorAxis;
+    double m_omega;
+    double m_phi;
+    double m_kappa;
+    double m_focalLength;
+    double m_spacecraftPosition[3];
+    double m_ccdCenter;
+    double m_startingDetectorSample;
+    double m_startingDetectorLine;
+    std::string m_targetName;
+    double m_ifov;
+    std::string m_instrumentID;
+    double m_focalLengthEpsilon;
+    double m_odtX[9];
+    double m_odtY[9];
+    double m_originalHalfLines;
+    std::string m_spacecraftName;
+    double m_pixelPitch;
+    double m_iTransS[3];
+    double m_ephemerisTime;
+    double m_originalHalfSamples;
+    double m_boresight[3];
+    double m_iTransL[3];
+    int m_nLines;
+    int m_nSamples;    
 };
 
 #endif
