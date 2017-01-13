@@ -1,8 +1,12 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 3.0)
 
+include(CheckCXXCompilerFlag)
+
 # Define the version and project name
 SET(CameraModel_Version_Major 0)
 SET(CameraModel_Version_Minor 1)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
 PROJECT(CameraModel)
 
 # whether not tests should be built

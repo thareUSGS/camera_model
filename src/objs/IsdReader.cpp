@@ -1,3 +1,4 @@
+#include <IsdReader.h>
 //Compile line:
 //This needs to incorporated into a Makefile at some future point
 //g++ -std=c++11 -I./../include/ -I./../include/json -I./../include/csm/ -L./../lib/ -Wl,-E,-rpath="../lib" -o isdObject isdObject.cpp -lcsmapi
@@ -12,29 +13,14 @@
 
 using namespace std;
 using json = nlohmann::json;
-//These are the different data types supported by the json library (with the exception of
-//unknown, for handling extraneious input)
-enum DataType{INT,UINT,FLOAT,STRING,BOOL,NULL8,UNKNOWN};
 
-DataType checkType(json::value_type obj);
-
-void addParam(csm::Isd * isd, json::iterator, DataType dt, int prec=12);
-void printISD(csm::Isd isd);
-
-int main(int argc, char *argv[]) {
-
+csm::Isd *readISD(string filename) {
   json jsonFile;
-  csm::Isd isd;
   int prec = 12;
+  csm::Isd *isd = NULL;
 
-  if (argc < 2) {
-    cerr << "Usage: " << argv[0] << " <isd file>" << endl;
-    return 1;
-  }
   //Read the ISD file
-  string line;
-  string filename(argv[1]);
-  ifstream file(argv[1]);
+  ifstream file(filename);
   if (!file.is_open()) {
     perror(("error while opening file " + filename).c_str());
   }
@@ -42,26 +28,27 @@ int main(int argc, char *argv[]) {
   else if (file.bad()) {
     perror(("error while reading file " + filename).c_str());
   }
-  
+
   else {
+    isd = new csm::Isd();
     file >> jsonFile;
-    isd.setFilename(filename);
+    isd->setFilename(filename);
     for (json::iterator i = jsonFile.begin(); i != jsonFile.end(); i++) {        
         if (i.value().is_array()){
           DataType arrayType = checkType(i.value()[0]);
-          addParam(&isd, i,arrayType,prec);
+          addParam(*isd, i,arrayType,prec);
         }
         else {
           DataType dt = checkType(i.value());
-          addParam(&isd,i,dt,prec);
+          addParam(*isd,i,dt,prec);
         }
     }//end for
   } //end outer-else
-  printISD(isd);
+  //printISD(*isd);
   file.close();
-
-  return 0;
+  return isd;
 }
+
 
 /**
  * @brief checkType
@@ -94,15 +81,16 @@ DataType checkType(json::value_type obj){
 
 }
 
+
 /**
  * @brief addParam:
- * @param isd A pointer to the ISD object
+ * @param isd A reference to the ISD object
  * @param it  The iterator to the json file which iterates over the keywords.
  * @param dt  The enum DataType value
  * @param prec The # of decimal places to be written to the ISD (if the value is a float)
  * @author Tyler Wilson
  */
-void addParam(csm::Isd * isd, json::iterator it, DataType dt, int prec) {
+void addParam(csm::Isd &isd, json::iterator it, DataType dt, int prec) {
   ostringstream key;
   //output the key to the ISD
   key << it.key();
@@ -112,7 +100,7 @@ void addParam(csm::Isd * isd, json::iterator it, DataType dt, int prec) {
       for (int j=0;j < v.size(); j++) {
         ostringstream val;
         val << setprecision(prec) << v[j];
-        isd->addParam(key.str(),val.str());
+        isd.addParam(key.str(),val.str());
       }
     }
     else if(dt==INT){
@@ -120,7 +108,7 @@ void addParam(csm::Isd * isd, json::iterator it, DataType dt, int prec) {
       for (int j=0;j < v.size(); j++) {
         ostringstream val;
         val << v[j];
-        isd->addParam(key.str(),val.str());
+        isd.addParam(key.str(),val.str());
       }
     }
 
@@ -129,7 +117,7 @@ void addParam(csm::Isd * isd, json::iterator it, DataType dt, int prec) {
       for (int j=0;j < v.size(); j++) {
         ostringstream val;
         val  << v[j];
-        isd->addParam(key.str(),val.str());
+        isd.addParam(key.str(),val.str());
       }
     }
     else if(dt ==BOOL) {
@@ -137,7 +125,7 @@ void addParam(csm::Isd * isd, json::iterator it, DataType dt, int prec) {
       for (int j=0;j < v.size(); j++) {
         ostringstream val;
         val << v[j];
-        isd->addParam(key.str(),val.str());
+        isd.addParam(key.str(),val.str());
       }
     }
     else if (dt ==STRING) {
@@ -145,7 +133,7 @@ void addParam(csm::Isd * isd, json::iterator it, DataType dt, int prec) {
       for (int j=0;j < v.size(); j++) {
         ostringstream val;
         val <<  v[j];
-        isd->addParam(key.str(),val.str());
+        isd.addParam(key.str(),val.str());
       }
     }
   }
@@ -154,36 +142,36 @@ void addParam(csm::Isd * isd, json::iterator it, DataType dt, int prec) {
       double v = it.value();
       ostringstream val;
       val << setprecision(prec) << v;
-      isd->addParam(key.str(),val.str());
+      isd.addParam(key.str(),val.str());
     }
     else if(dt==INT){
       int v = it.value();
       ostringstream val;
       val  << v;
-      isd->addParam(key.str(),val.str());
+      isd.addParam(key.str(),val.str());
     }
     else if(dt==UINT) {
       unsigned int v = it.value();
       ostringstream val;
       val << v;
-      isd->addParam(key.str(),val.str());
+      isd.addParam(key.str(),val.str());
     }
     else if(dt ==BOOL) {
       bool v = it.value();
       ostringstream val;
       val  << v;
-      isd->addParam(key.str(),val.str());
+      isd.addParam(key.str(),val.str());
     }
     else if (dt ==STRING) {
       string v = it.value();
       ostringstream val;
       val  << v;
-      isd->addParam(key.str(),val.str());
+      isd.addParam(key.str(),val.str());
     }
     else if (dt ==NULL8) {
       ostringstream val;
       val  << "null";
-      isd->addParam(key.str(),val.str());
+      isd.addParam(key.str(),val.str());
     }
   }//end outer else
 }//end addParam
@@ -194,7 +182,7 @@ void addParam(csm::Isd * isd, json::iterator it, DataType dt, int prec) {
  * @param isd
  * @author Tyler Wilson
  */
-void printISD(csm::Isd isd){
+void printISD(const csm::Isd &isd){
   const multimap<string,string> isdMap = isd.parameters();
   for (auto &i: isdMap)
     cout << i.first << " : " << i.second << endl;
