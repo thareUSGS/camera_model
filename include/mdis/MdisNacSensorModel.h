@@ -257,10 +257,10 @@ class MdisNacSensorModel : public csm::RasterGM {
     
   protected:
 
-     virtual bool SetFocalPlane(double dx,double dy,double *x,double *y) const;
-     virtual void distortionFunction(double ux, double uy, double *dx, double *dy) const;
-     virtual void distortionJacobian(double x, double y, double *Jxx,
-                                                         double *Jxy, double *Jyx, double *Jyy) const;
+    virtual bool setFocalPlane(double dx,double dy,double &undistortedX,double &undistortedY) const;
+    virtual void distortionFunction(double ux, double uy, double &dx, double &dy) const;
+    virtual void distortionJacobian(double x, double y, double &Jxx,
+                                    double &Jxy, double &Jyx, double &Jyy) const;
 
     
     /**

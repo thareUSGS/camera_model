@@ -65,16 +65,16 @@ MdisNacSensorModel::~MdisNacSensorModel() {
 
 
 /**
- *  @brief Compute undistorted focal plane x/y.
+ * @brief Compute undistorted focal plane x/y.
  *
- * Compute undistorted focal plane x/y given a distorted focal plane x/y.
- * The undistorted coordinates are solved for using the Newton-Raphson
- * method for root-finding if the SetDistortion method is invoked.
- * After calling this method, you can obtain the undistorted x/y via
- * the UndistortedFocalPlaneX and UndistortedFocalPlaneY methods.
+ * Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
+ * coordinate. The undistorted coordinates are solved for using the Newton-Raphson
+ * method for root-finding if the distortionFunction method is invoked.
  *
  * @param dx distorted focal plane x in millimeters
  * @param dy distorted focal plane y in millimeters
+ * @param undistortedX The undistorted x coordinate, in millimeters.
+ * @param undistortedY The undistorted y coordinate, in millimeters.
  *
  * @return if the conversion was successful
  * @todo Review the tolerance and maximum iterations of the root-
@@ -83,9 +83,9 @@ MdisNacSensorModel::~MdisNacSensorModel() {
  *       algorithm.
  * @todo Add error handling for near-zero determinant.
 */
-bool MdisNacSensorModel::SetFocalPlane(double dx,double dy,
-                                       double *p_undistortedFocalPlaneX,
-                                       double *p_undistortedFocalPlaneY ) const {
+bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
+                                       double &undistortedX,
+                                       double &undistortedY ) const {
 
 
   // Solve the distortion equation using the Newton-Raphson method.
@@ -108,19 +108,19 @@ bool MdisNacSensorModel::SetFocalPlane(double dx,double dy,
   x = dx;
   y = dy;
 
-  distortionFunction(x, y, &fx, &fy);
+  distortionFunction(x, y, fx, fy);
 
-  for(int count = 1; ((fabs(fx) + fabs(fy)) > tol) && (count < maxTries); count++) {
+  for (int count = 1; ((fabs(fx) + fabs(fy)) > tol) && (count < maxTries); count++) {
 
-    this->distortionFunction(x, y, &fx, &fy);
+    this->distortionFunction(x, y, fx, fy);
 
     fx = dx - fx;
     fy = dy - fy;
 
-    distortionJacobian(x, y, &Jxx, &Jxy, &Jyx, &Jyy);
+    distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
 
     double determinant = Jxx * Jyy - Jxy * Jyx;
-    if(determinant < 1E-6) {
+    if (determinant < 1E-6) {
       //
       // Near-zero determinant. Add error handling here.
       //
@@ -132,16 +132,16 @@ bool MdisNacSensorModel::SetFocalPlane(double dx,double dy,
     y = y + (Jxx * fy - Jyx * fx) / determinant;
   }
 
-  if((fabs(fx) + fabs(fy)) <= tol) {
+  if ( (fabs(fx) + fabs(fy)) <= tol) {
     // The method converged to a root.
-    *p_undistortedFocalPlaneX = x;
-    *p_undistortedFocalPlaneY = y;
+    undistortedX = x;
+    undistortedY = y;
   }
   else {
     // The method did not converge to a root within the maximum
     // number of iterations. Return with no distortion.
-    *p_undistortedFocalPlaneX = dx;
-    *p_undistortedFocalPlaneY = dy;
+    undistortedX = dx;
+    undistortedY = dy;
   }
 
   return true;
@@ -151,19 +151,19 @@ bool MdisNacSensorModel::SetFocalPlane(double dx,double dy,
 
 
 /**
- * Jacobian of the distortion function. The Jacobian was computed
- * algebraically from the function described in the DistortionFunction
+ * @description Jacobian of the distortion function. The Jacobian was computed
+ * algebraically from the function described in the distortionFunction
  * method.
  *
  * @param x
  * @param y
- * @param Jxx
- * @param Jxy
- * @param Jyx
- * @param Jyy
+ * @param Jxx  Partial_xx
+ * @param Jxy  Partial_xy
+ * @param Jyx  Partial_yx
+ * @param Jyy  Partial_yy
  */
-void MdisNacSensorModel::distortionJacobian(double x, double y, double *Jxx, double *Jxy,
-                                            double *Jyx, double *Jyy) const {
+void MdisNacSensorModel::distortionJacobian(double x, double y, double &Jxx, double &Jxy,
+                                            double &Jyx, double &Jyy) const {
 
   double d_dx[10];
   d_dx[0] = 0;
@@ -188,16 +188,16 @@ void MdisNacSensorModel::distortionJacobian(double x, double y, double *Jxx, dou
   d_dy[8] = 2 * x * y;
   d_dy[9] = 3 * y * y;
 
-  *Jxx = 0.0;
-  *Jxy = 0.0;
-  *Jyx = 0.0;
-  *Jyy = 0.0;
+  Jxx = 0.0;
+  Jxy = 0.0;
+  Jyx = 0.0;
+  Jyy = 0.0;
 
-  for(int i = 0; i < 10; i++) {
-    *Jxx = *Jxx + d_dx[i] * m_odtX[i];
-    *Jxy = *Jxy + d_dy[i] * m_odtX[i];
-    *Jyx = *Jyx + d_dx[i] * m_odtY[i];
-    *Jyy = *Jyy + d_dy[i] * m_odtY[i];
+  for (int i = 0; i < 10; i++) {
+    Jxx = Jxx + d_dx[i] * m_odtX[i];
+    Jxy = Jxy + d_dy[i] * m_odtX[i];
+    Jyx = Jyx + d_dx[i] * m_odtY[i];
+    Jyy = Jyy + d_dy[i] * m_odtY[i];
   }
 
 
@@ -205,15 +205,16 @@ void MdisNacSensorModel::distortionJacobian(double x, double y, double *Jxx, dou
 
 
 /**
- * Compute distorted focal plane dx,dy given an undistorted focal plane ux,uy.
- * This describes the third order Taylor approximation to the distortion model.
+ * @description Compute distorted focal plane (dx,dy) coordinate  given an undistorted focal
+ * plane (ux,uy) coordinate. This describes the third order Taylor approximation to the
+ * distortion model.
  *
  * @param ux Undistored x
  * @param uy Undistored y
  * @param dx Result distorted x
  * @param dy Result distorted y
  */
-void MdisNacSensorModel::distortionFunction(double ux, double uy, double *dx, double *dy) const {
+void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, double &dy) const {
 
   double f[10];
   f[0] = 1;
@@ -227,12 +228,12 @@ void MdisNacSensorModel::distortionFunction(double ux, double uy, double *dx, do
   f[8] = ux * uy * uy;
   f[9] = uy * uy * uy;
 
-  *dx = 0.0;
-  *dy = 0.0;
+  dx = 0.0;
+  dy = 0.0;
 
-  for(int i = 0; i < 10; i++) {
-    *dx = *dx + f[i] * m_odtX[i];
-    *dy = *dy + f[i] * m_odtY[i];
+  for (int i = 0; i < 10; i++) {
+    dx = dx + f[i] * m_odtX[i];
+    dy = dy + f[i] * m_odtY[i];
   }
 
 }
