@@ -250,6 +250,13 @@ class MdisNacSensorModel : public csm::RasterGM {
         const GeometricModelList &otherModels = GeometricModelList()) const;          
         
     static const std::string _SENSOR_MODEL_NAME;
+protected:
+    virtual bool SetFocalPlane(double dx,double dy,double *x,double *y) const;
+    virtual void distortionFunction(double ux, double uy, double *dx, double *dy) const;
+    virtual void distortionJacobian(double x, double y, double *Jxx,
+                                    double *Jxy, double *Jyx, double *Jyy) const;
+
+
                                                             
   private:
     
@@ -268,8 +275,8 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_ifov;
     std::string m_instrumentID;
     double m_focalLengthEpsilon;
-    double m_odtX[9];
-    double m_odtY[9];
+    double m_odtX[10];
+    double m_odtY[10];
     double m_originalHalfLines;
     std::string m_spacecraftName;
     double m_pixelPitch;

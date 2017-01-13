@@ -9,6 +9,8 @@
 
 #include <json/json.hpp>
 #include <csm/Isd.h>
+//#include <json.hpp>
+//#include<Isd.h>
 
 using namespace std;
 using json = nlohmann::json;
@@ -20,6 +22,10 @@ DataType checkType(json::value_type obj);
 
 void addParam(csm::Isd * isd, json::iterator, DataType dt, int prec=12);
 void printISD(csm::Isd isd);
+
+
+
+
 
 int main(int argc, char *argv[]) {
 
@@ -60,7 +66,7 @@ int main(int argc, char *argv[]) {
   printISD(isd);
   file.close();
 
-  return 0;
+  //return 0;
 }
 
 /**
