@@ -1,4 +1,8 @@
+#include <MdisPlugin.h>
 #include <MdisNacSensorModel.h>
+#include <IsdReader.h>
+
+#include <csm/Isd.h>
 
 #include <gtest/gtest.h>
 
@@ -26,9 +30,14 @@ class MdisNacSensorModelTest : public ::testing::Test {
   protected:
     // Per test-case setup and teardown (e.g. once for this MdisNacSensorModelTest)
     static void SetUpTestCase() {
+      dataFile = "./data/EN1007907102M.json";
+      isd = readISD(dataFile);
     }
     
-    static void TearDownTestCase() {}
+    static void TearDownTestCase() {
+      delete isd;
+      isd = NULL;
+    }
     
     // Per test setup and teardown (e.g. each TEST_F)
     virtual void SetUp() {
@@ -37,10 +46,59 @@ class MdisNacSensorModelTest : public ::testing::Test {
 
     virtual void TearDown() {}
 
-    MdisNacSensorModel defaultMdisNac;
-    double tolerance;
-    TestableMdisNacSensorModel testMath;
+    static csm::Isd *isd;                // ISD converted from JSON to use for creating model.
+    static std::string dataFile;         // JSON data file to be converted to ISD for testing.
+    
+    double tolerance;                    // Tolerance to be used for double comparison.
+    MdisPlugin mdisPlugin;               // Plugin used to create a model from ISD.
+    MdisNacSensorModel defaultMdisNac;   // A default constructed MdisNacSensorModel.
+    TestableMdisNacSensorModel testMath; // Subclassed MdisNacSensorModel for protected methods.
 };
+
+
+csm::Isd *MdisNacSensorModelTest::isd = NULL;
+std::string MdisNacSensorModelTest::dataFile;
+
+
+/* 
+ * Test imageToGround - truth extracted as follows:
+ * setisis isis3
+ * qview /work/projects/IAA_camera/data/EN100790102M.cub
+ * F (selects "Find Tool")
+ * On top toolbar, select "Find Point"
+ * Type in 512.5, 512.5 for Sample/Line (ISIS3 pixel center = 1,1)
+ * Click "Record Point"
+ * Check "XYZ" -> { 1132.18, -1597.75, 1455.66 }
+ */
+TEST_F(MdisNacSensorModelTest, imageToGround1) {
+  // CSM Line/Sample center = 512, 512
+  csm::ImageCoord point(512.0, 512.0);
+  double height = 0.0;
+  
+  // Create a model from the ISD so we can test a valid image.
+  // Make sure the isd was read correctly.
+  if (!isd) {
+    FAIL() << "Could not create isd from file: " << dataFile;
+  }
+  std::string modelName = MdisNacSensorModel::_SENSOR_MODEL_NAME;
+  csm::Model *validModel = mdisPlugin.constructModelFromISD(*isd, modelName);
+  // We could static_cast, but may be hard to debug if it doesn't correctly cast.
+  MdisNacSensorModel *mdisModel = dynamic_cast<MdisNacSensorModel *>(validModel);
+  
+  // Fatal failure if the downcast doesn't work
+  if (!mdisModel) {
+    FAIL() << "Could not downcast Model* to MdisNacSensorModel*.";
+  }
+  
+  csm::EcefCoord xyz = mdisModel->imageToGround(point, height);
+  double truth[] = { 1132.18*1000, -1597.75*1000, 1455.66*1000 };
+  EXPECT_EQ(truth[0], xyz.x);
+  EXPECT_EQ(truth[1], xyz.y);
+  EXPECT_EQ(truth[2], xyz.z);
+  
+  // Remove the memory we took ownership of.
+  delete mdisModel;
+}
 
 
 // Tests the getModelState() method with a default constructed MdisNacSensorModel.
