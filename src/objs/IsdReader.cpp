@@ -1,7 +1,5 @@
 #include <IsdReader.h>
-//Compile line:
-//This needs to incorporated into a Makefile at some future point
-//g++ -std=c++11 -I./../include/ -I./../include/json -I./../include/csm/ -L./../lib/ -Wl,-E,-rpath="../lib" -o isdObject isdObject.cpp -lcsmapi
+
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -23,10 +21,12 @@ csm::Isd *readISD(string filename) {
   ifstream file(filename);
   if (!file.is_open()) {
     perror(("error while opening file " + filename).c_str());
+    return NULL;
   }
 
   else if (file.bad()) {
     perror(("error while reading file " + filename).c_str());
+    return NULL;
   }
 
   else {

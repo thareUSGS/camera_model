@@ -30,9 +30,8 @@ class MdisNacSensorModelTest : public ::testing::Test {
   protected:
     // Per test-case setup and teardown (e.g. once for this MdisNacSensorModelTest)
     static void SetUpTestCase() {
-      std::string filename("./data/EN1007907102M.json");
-      isd = readISD(filename);
-      printISD(*isd);
+      dataFile = "./data/EN1007907102M.json";
+      isd = readISD(dataFile);
     }
     
     static void TearDownTestCase() {
@@ -47,16 +46,18 @@ class MdisNacSensorModelTest : public ::testing::Test {
 
     virtual void TearDown() {}
 
-    static csm::Isd *isd;
+    static csm::Isd *isd;                // ISD converted from JSON to use for creating model.
+    static std::string dataFile;         // JSON data file to be converted to ISD for testing.
     
-    double tolerance;
-    MdisPlugin mdisPlugin;
-    MdisNacSensorModel defaultMdisNac;
-    TestableMdisNacSensorModel testMath;
+    double tolerance;                    // Tolerance to be used for double comparison.
+    MdisPlugin mdisPlugin;               // Plugin used to create a model from ISD.
+    MdisNacSensorModel defaultMdisNac;   // A default constructed MdisNacSensorModel.
+    TestableMdisNacSensorModel testMath; // Subclassed MdisNacSensorModel for protected methods.
 };
 
 
 csm::Isd *MdisNacSensorModelTest::isd = NULL;
+std::string MdisNacSensorModelTest::dataFile;
 
 
 /* 
@@ -75,6 +76,10 @@ TEST_F(MdisNacSensorModelTest, imageToGround1) {
   double height = 0.0;
   
   // Create a model from the ISD so we can test a valid image.
+  // Make sure the isd was read correctly.
+  if (!isd) {
+    FAIL() << "Could not create isd from file: " << dataFile;
+  }
   std::string modelName = MdisNacSensorModel::_SENSOR_MODEL_NAME;
   csm::Model *validModel = mdisPlugin.constructModelFromISD(*isd, modelName);
   // We could static_cast, but may be hard to debug if it doesn't correctly cast.
