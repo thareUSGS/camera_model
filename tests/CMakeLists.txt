@@ -6,10 +6,6 @@
 # Need line below for EXPECT_THROW to avoid:
 # "warning: non-static data member initializers only 
 # available with -std=c++11 or -std=gnu++11"
-# add_definitions(-std=c++11)
-
-
-
 
 # Find libcsmapi.so
 FIND_LIBRARY(CSMAPI_LIBRARY csmapi "${CMAKE_SOURCE_DIR}/lib")
@@ -21,4 +17,4 @@ ADD_EXECUTABLE(runTests runTests.cpp ${SRC_FILES})
 TARGET_INCLUDE_DIRECTORIES(runTests PUBLIC 
   ${CMAKE_SOURCE_DIR}/include/mdis
   ${CMAKE_SOURCE_DIR}/include)
-TARGET_LINK_LIBRARIES(runTests gtest_main ${CSMAPI_LIBRARY} MdisPlugin MdisNacSensorModel)
+TARGET_LINK_LIBRARIES(runTests gtest_main ${CSMAPI_LIBRARY} MdisPlugin MdisNacSensorModel IsdReader)
