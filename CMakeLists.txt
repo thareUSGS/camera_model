@@ -1,4 +1,5 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 3.0)
+
 include(CheckCXXCompilerFlag)
 # Define the version and project name
 SET(CameraModel_Version_Major 0)

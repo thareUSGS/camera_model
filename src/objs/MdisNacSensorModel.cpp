@@ -65,10 +65,6 @@ MdisNacSensorModel::~MdisNacSensorModel() {
 }
 
 
-
-
-
-
 /**
  * @brief Compute undistorted focal plane x/y.
  *
@@ -158,7 +154,6 @@ bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
   return true;
 
 }
-
 
 
 /**
@@ -290,13 +285,11 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
   double focalPlaneX = m_transX[0] + (m_transX[1] * sample) + (m_transX[2] * line);
   double focalPlaneY = m_transY[0] + (m_transY[1] * sample) + (m_transY[2] * line);
 
-  double undistortedFocalPlaneX=0.0;
-  double undistortedFocalPlaneY=0.0;
+  double undistortedFocalPlaneX = focalPlaneX;
+  double undistortedFocalPlaneY = focalPlaneY;
 
-  setFocalPlane(focalPlaneX,focalPlaneY,undistortedFocalPlaneX,undistortedFocalPlaneY);
+  setFocalPlane(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
 
-
-  
   // Trigonometric functions for rotation matrix
   const double sinw = std::sin(m_omega);
   const double sinp = std::sin(m_phi);
@@ -320,16 +313,16 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
   
   // Multiply the focal vector to the rotation matrix to get the direction of the camera
   std::vector<double> direction(3);
-  direction[0] = m[0] * undistortedFocalPlaneX + m[1] * undistortedFocalPlaneX + m[2] * m_focalLength;
-  direction[1] = m[3] * undistortedFocalPlaneX + m[4] * undistortedFocalPlaneX + m[5] * m_focalLength;
-  direction[2] = m[6] * undistortedFocalPlaneX + m[7] * undistortedFocalPlaneX + m[8] * m_focalLength;
+  direction[0] = m[0] * undistortedFocalPlaneX + m[1] * undistortedFocalPlaneY + m[2] * m_focalLength;
+  direction[1] = m[3] * undistortedFocalPlaneX + m[4] * undistortedFocalPlaneY + m[5] * m_focalLength;
+  direction[2] = m[6] * undistortedFocalPlaneX + m[7] * undistortedFocalPlaneY + m[8] * m_focalLength;
   
   // Save the spacecraft position as a vector
   std::vector<double> spacecraftPosition(3);
   spacecraftPosition[0] = m_spacecraftPosition[0];
   spacecraftPosition[1] = m_spacecraftPosition[1];
   spacecraftPosition[2] = m_spacecraftPosition[2];
-    
+  
   // Perform the intersection
   return intersect(spacecraftPosition, direction, m_majorAxis);
 }
