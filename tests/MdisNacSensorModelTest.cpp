@@ -32,6 +32,7 @@ class MdisNacSensorModelTest : public ::testing::Test {
     static void SetUpTestCase() {
       dataFile = "./data/EN1007907102M.json";
       isd = readISD(dataFile);
+      // printISD(*isd);
     }
     
     static void TearDownTestCase() {
@@ -104,6 +105,26 @@ TEST_F(MdisNacSensorModelTest, imageToGround1) {
 // Tests the getModelState() method with a default constructed MdisNacSensorModel.
 TEST_F(MdisNacSensorModelTest, getModelStateDefault) {
   EXPECT_EQ(defaultMdisNac.getModelState(), std::string());
+}
+
+
+// Test intersect
+TEST_F(MdisNacSensorModelTest, intersectTrivial) {
+  std::vector<double> position { 0.0, 0.0, 1.5 };
+  std::vector<double> look { 0.0, 0.0, -0.5 };
+  csm::EcefCoord intersectGround = testMath.intersect(position, look, 1.0);
+  EXPECT_EQ(0.0, intersectGround.x);
+  EXPECT_EQ(0.0, intersectGround.y);
+  EXPECT_EQ(1.0, intersectGround.z);
+}
+
+TEST_F(MdisNacSensorModelTest, intersectLookingAway) {
+  std::vector<double> position { 0.0, 0.0, 2.0 };
+  std::vector<double> look { 0.0, 0.0, 0.5 };
+  csm::EcefCoord ground = testMath.intersect(position, look, 1.0);
+  EXPECT_EQ(0.0, ground.x);
+  EXPECT_EQ(0.0, ground.y);
+  EXPECT_EQ(0.0, ground.z);
 }
 
 
