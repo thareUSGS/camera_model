@@ -2,9 +2,14 @@
 #include "MdisNacSensorModel.h"
 
 #include <csm/Error.h>
+#include <iostream>
+#include <iomanip>
+
+using namespace std;
 
 const std::string MdisNacSensorModel::_SENSOR_MODEL_NAME 
                                       = "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so";
+
 
                                       
 MdisNacSensorModel::MdisNacSensorModel() {
@@ -31,26 +36,26 @@ MdisNacSensorModel::MdisNacSensorModel() {
 
 
   m_odtX[0]=0.0;
-  m_odtX[1]=1.0020558791381;
-  m_odtX[2]=0.0;
-  m_odtX[3]=0.0;
-  m_odtX[4]=-5.44874222271292e-04;
+  m_odtX[1]=1.0018542696237999756;
+  m_odtX[2]=-0.0;
+  m_odtX[3]=-0.0;
+  m_odtX[4]=-0.00050944404749411103042;
   m_odtX[5]=0.0;
-  m_odtX[6]=6.59749881186269e-06;
+  m_odtX[6]=1.0040104714688599425e-05;
   m_odtX[7]=0.0;
-  m_odtX[8]=6.68312905601468e-06;
+  m_odtX[8]=1.0040104714688599425e-05;
   m_odtX[9]=0.0;
 
-  m_odtY[0]=-1.365797535954e-05;
+  m_odtY[0]=0.0;
   m_odtY[1]=0.0;
   m_odtY[2]=1.0;
-  m_odtY[3]=8.85544334965699e-04;
+  m_odtY[3]=0.00090600105949967496381;
   m_odtY[4]=0.0;
-  m_odtY[5]=3.33893913833148e-04;
+  m_odtY[5]=0.00035748426266207598964;
   m_odtY[6]=0.0;
-  m_odtY[7]=7.74756721313425e-06;
+  m_odtY[7]=1.0040104714688599425e-05;
   m_odtY[8]=0.0;
-  m_odtY[9]=7.79484564042716e-06;
+  m_odtY[9]=1.0040104714688599425e-05;
 
 }
 
@@ -93,7 +98,7 @@ bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
   const double tol = 1.4E-5;
 
   // The maximum number of iterations of the Newton-Raphson method.
-  const int maxTries = 20;
+  const int maxTries = 60;
 
   double x;
   double y;
@@ -136,6 +141,12 @@ bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
     // The method converged to a root.
     undistortedX = x;
     undistortedY = y;
+#if 0
+    cout << "dx:"  << setprecision(20)<<dx << endl;
+    cout << "dy:"  << setprecision(20)<<dy << endl;
+    cout << "undistortedX:"  << setprecision(20) << undistortedX << endl;
+    cout << "undistortedY:"  << setprecision(20) << undistortedY << endl;
+#endif
   }
   else {
     // The method did not converge to a root within the maximum
@@ -282,7 +293,7 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
   double undistortedFocalPlaneX=0.0;
   double undistortedFocalPlaneY=0.0;
 
-  //SetFocalPlane(focalPlaneX,focalPlaneY,&undistortedFocalPlaneX,&undistortedFocalPlaneY);
+  setFocalPlane(focalPlaneX,focalPlaneY,undistortedFocalPlaneX,undistortedFocalPlaneY);
 
 
   
