@@ -138,6 +138,19 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   if (imageSupportData.param("z_sensor_origin") == "") {
     missingKeywords.push_back("z_sensor_origin");
   }
+  
+  sensorModel->m_omega = atof(imageSupportData.param("omega").c_str());
+  sensorModel->m_phi = atof(imageSupportData.param("phi").c_str());
+  sensorModel->m_kappa = atof(imageSupportData.param("kappa").c_str());
+  if (imageSupportData.param("omega") == "") {
+    missingKeywords.push_back("omega");
+  }
+  if (imageSupportData.param("phi") == "") {
+    missingKeywords.push_back("phi");
+  }
+  if (imageSupportData.param("kappa") == "") {
+    missingKeywords.push_back("kappa");
+  }
 
   sensorModel->m_odtX[0] = atof(imageSupportData.param("odt_x", 0).c_str());
   sensorModel->m_odtX[1] = atof(imageSupportData.param("odt_x", 1).c_str());
