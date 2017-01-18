@@ -11,6 +11,8 @@ PROJECT(CameraModel)
 # Set additional module search paths
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
+#Setup to use CPP11
+ADD_COMPILE_OPTIONS(-std=c++11)
 # Setup for external dependencies (either use system or install)
 if( NOT INSTALL_DEPENDENCIES_DIR )
     SET( INSTALL_DEPENDENCIES_DIR ${CMAKE_BINARY_DIR}/INSTALL CACHE STRING "Install directory for dependencies")
@@ -20,14 +22,17 @@ endif()
 INCLUDE(ExternalProject)
 
 # Provide the ability to download dependencies and build (default: download)
-OPTION (USE_SYSTEM_EIGEN " Use system libraries for Eigen" OFF)
+OPTION (USE_SYSTEM_EIGEN "Use system libraries for Eigen" OFF)
 if (${USE_SYSTEM_EIGEN} MATCHES "OFF")
 	include("${CMAKE_MODULE_PATH}/External-Eigen.cmake")
 else()
 	FIND_PACKAGE(Eigen3 REQUIRED 3.4)
 endif()
 
+# Bring in the JSON dependency
+INCLUDE("${CMAKE_MODULE_PATH}/External-JSON.cmake")
 
+# Find GDAL
 FIND_PACKAGE(GDAL REQUIRED)
 
 # whether not tests should be built
