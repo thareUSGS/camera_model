@@ -9,16 +9,16 @@
 #include <gtest/gtest.h>
 
 class MdisPluginTest : public ::testing::Test {
-  
+
   protected:
     virtual void SetUp() {
       mdisNacName = MdisNacSensorModel::_SENSOR_MODEL_NAME;
     }
-    
+
     MdisPlugin defaultMdisPlugin;
-  
+
     std::string mdisNacName;
-  
+
 };
 
 TEST_F(MdisPluginTest, getPluginName) {
@@ -61,10 +61,10 @@ TEST_F(MdisPluginTest, constructModelFromISD) {
   // Empty (i.e. invalid) ISD
   EXPECT_THROW({
     csm::Isd emptyIsd;
-    csm::Model *model = defaultMdisPlugin.constructModelFromISD(emptyIsd, mdisNacName);      
+    csm::Model *model = defaultMdisPlugin.constructModelFromISD(emptyIsd, mdisNacName);
   },
   csm::Error);
-  
+
   // ISD is not supported (wrong sensor model name)
   EXPECT_THROW({
     csm::Isd catSensor;
