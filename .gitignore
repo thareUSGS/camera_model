@@ -3,6 +3,9 @@ build
 lib/*
 include/csm/*
 
+# iPython checkpoint items
+.ipynb_checkpoints/*
+
 # Ignore any executables
 bin/*
 
