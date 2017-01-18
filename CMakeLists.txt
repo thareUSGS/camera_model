@@ -29,9 +29,6 @@ else()
 	FIND_PACKAGE(Eigen3 REQUIRED 3.4)
 endif()
 
-# Bring in the JSON dependency
-INCLUDE("${CMAKE_MODULE_PATH}/External-JSON.cmake")
-
 # Find GDAL
 FIND_PACKAGE(GDAL REQUIRED)
 
