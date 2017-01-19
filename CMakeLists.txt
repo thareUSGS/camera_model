@@ -11,7 +11,7 @@ PROJECT(CameraModel)
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 #Setup to use CPP11
-ADD_COMPILE_OPTIONS(-std=c++0x)
+ADD_COMPILE_OPTIONS(-std=c++11)
 # Setup for external dependencies (either use system or install)
 if( NOT INSTALL_DEPENDENCIES_DIR )
     SET( INSTALL_DEPENDENCIES_DIR ${CMAKE_BINARY_DIR}/INSTALL CACHE STRING "Install directory for dependencies")
