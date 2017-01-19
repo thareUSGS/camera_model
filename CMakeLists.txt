@@ -28,6 +28,13 @@ else()
 	FIND_PACKAGE(Eigen3 REQUIRED 3.4)
 endif()
 
+# Find Spice
+OPTION (USE_SYSTEM_SPICE "Use system libraries for the NAIFSpice Toolkit" OFF)
+if (${USE_SYSTEM_SPICE} MATCHES "OFF")
+  INCLUDE("${CMAKE_MODULE_PATH}/External-Spice.cmake")
+endif()
+FIND_PACKAGE(Spice)
+
 # Find GDAL
 FIND_PACKAGE(GDAL REQUIRED)
 
