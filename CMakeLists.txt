@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 3.0)
-
+include_directories(include)
 include(CheckCXXCompilerFlag)
 # Define the version and project name
 SET(CameraModel_Version_Major 0)
@@ -30,7 +30,7 @@ else()
 endif()
 
 # Find GDAL
-FIND_PACKAGE(GDAL REQUIRED)
+#FIND_PACKAGE(GDAL REQUIRED)
 
 # whether not tests should be built
 OPTION (ENABLE_TESTS "Build the tests?" OFF)
