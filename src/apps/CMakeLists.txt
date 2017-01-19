@@ -1,0 +1,2 @@
+ADD_SUBDIRECTORY(mdis2isd)
+ADD_SUBDIRECTORY(spice2isd)
