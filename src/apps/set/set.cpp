@@ -11,16 +11,17 @@ using namespace std;
 
 int main() {
   
-  // Load the ISD object
+  // Create and load in the ISD object from an ISD file
   csm::Isd isd;
   
   // Create the plugin
   MdisPlugin plugin;
   
-  // Create the Sensor model
-  MdisNacSensorModel model = plugin.constructModelFromISD(isd, "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so");
+  // Create the Sensor model from the ISD object using the plugin
+  MdisNacSensorModel model = 
+    plugin.constructModelFromISD(isd, "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so");
   
-  // Test the model's accuracy
+  // Test the model's accuracy by visually comparing the results of the function calls
   csm::EcefCoord groundPoint;
   csm::ImageCoord imagePoint;
   
