@@ -1,2 +1,3 @@
 ADD_SUBDIRECTORY(apps)
 ADD_SUBDIRECTORY(objs)
+ADD_SUBDIRECTORY(transformations)
