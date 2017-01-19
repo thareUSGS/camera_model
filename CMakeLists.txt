@@ -4,7 +4,6 @@ include(CheckCXXCompilerFlag)
 # Define the version and project name
 SET(CameraModel_Version_Major 0)
 SET(CameraModel_Version_Minor 1)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 PROJECT(CameraModel)
 
@@ -28,6 +27,13 @@ if (${USE_SYSTEM_EIGEN} MATCHES "OFF")
 else()
 	FIND_PACKAGE(Eigen3 REQUIRED 3.4)
 endif()
+
+# Find Spice
+OPTION (USE_SYSTEM_SPICE "Use system libraries for the NAIFSpice Toolkit" OFF)
+if (${USE_SYSTEM_SPICE} MATCHES "OFF")
+  INCLUDE("${CMAKE_MODULE_PATH}/External-Spice.cmake")
+endif()
+FIND_PACKAGE(Spice)
 
 # Find GDAL
 #FIND_PACKAGE(GDAL REQUIRED)
