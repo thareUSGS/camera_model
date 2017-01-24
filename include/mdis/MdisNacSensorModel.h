@@ -342,10 +342,10 @@ class MdisNacSensorModel : public csm::RasterGM {
     std::string m_spacecraftName;
     double m_pixelPitch;
     double m_iTransS[3];
+    double m_iTransL[3];
     double m_ephemerisTime;
     double m_originalHalfSamples;
     double m_boresight[3];
-    double m_iTransL[3];
     int m_nLines;
     int m_nSamples;    
 };
