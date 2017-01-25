@@ -15,26 +15,28 @@ const std::string MdisNacSensorModel::_SENSOR_MODEL_NAME
 MdisNacSensorModel::MdisNacSensorModel() {
 
   m_transX[0] = 0.0;
-  m_transX[1] = 0.014;
+  m_transX[1] = 0.0;
   m_transX[2] = 0.0;
 
   m_transY[0] = 0.0;
   m_transY[1] = 0.0;
-  m_transY[2] = 0.014;
+  m_transY[2] = 0.0;
   
-  m_majorAxis = 2439.7 * 1000;
-  m_omega = 0;
-  m_phi = 0;
-  m_kappa = 0;
-  m_focalLength = 549.302734762479;
+  m_majorAxis = 0.0;
+  m_omega = 0.0;
+  m_phi = 0.0;
+  m_kappa = 0.0;
+  m_focalLength = 0.0;
   
-  m_spacecraftPosition[0] = -64970.59667668573;
-  m_spacecraftPosition[1] = 62477.47193211249;
-  m_spacecraftPosition[2] = -2130.3884612457987;
+  m_spacecraftPosition[0] = 0.0;
+  m_spacecraftPosition[1] = 0.0;
+  m_spacecraftPosition[2] = 0.0;
   
-  m_ccdCenter = 512.5;
+  m_ccdCenter = 0.0;
 
 
+#if 0
+  //NAC coefficients 
   m_odtX[0]=0.0;
   m_odtX[1]=1.0018542696237999756;
   m_odtX[2]=-0.0;
@@ -56,13 +58,34 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_odtY[7]=1.0040104714688599425e-05;
   m_odtY[8]=0.0;
   m_odtY[9]=1.0040104714688599425e-05;
+#endif
+  m_odtX[0] = 0.0;
+  m_odtX[1] = 0.0;
+  m_odtX[2] = 0.0;
+  m_odtX[3] = 0.0;
+  m_odtX[4] = 0.0;
+  m_odtX[5] = 0.0;
+  m_odtX[6] = 0.0;
+  m_odtX[7] = 0.0;
+  m_odtX[8] = 0.0;
+  m_odtX[9] = 0.0;
+
+  m_odtY[0] = 0.0;
+  m_odtY[1] = 0.0;
+  m_odtY[2] = 0.0;
+  m_odtY[3] = 0.0;
+  m_odtY[4] = 0.0;
+  m_odtY[5] = 0.0;
+  m_odtY[6] = 0.0;
+  m_odtY[7] = 0.0;
+  m_odtY[8] = 0.0;
+  m_odtY[9] = 0.0;
+>>>>>>> upstream/master
 
 }
 
 
-MdisNacSensorModel::~MdisNacSensorModel() {
-  
-}
+MdisNacSensorModel::~MdisNacSensorModel() {}
 
 
 /**
