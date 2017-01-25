@@ -80,7 +80,7 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_odtY[7] = 0.0;
   m_odtY[8] = 0.0;
   m_odtY[9] = 0.0;
->>>>>>> upstream/master
+
 
 }
 
