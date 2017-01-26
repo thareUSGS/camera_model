@@ -1,3 +1,7 @@
+#ifndef SpiceController_h
+#define SpiceController_h
+
+
 #include <iomanip>
 #include <iostream>
 #include <numeric>
@@ -5,8 +9,7 @@
 #include <string>
 #include <vector>
 
-//Compiling class
-//g++ *.cpp -c -Wall -Wextra -I../../../include -L../../../lib/
+
 using namespace std;
 
 class SpiceController {
@@ -28,31 +31,14 @@ public:
     unload();
   }
 
-
   void loadKernel(string &kernelFile);
-
-
-
-
-
 
 private:
   vector<string> m_kernlist;  //!< The list of kernels
   bool m_furnish;             //!< Load the kernels found?
-
-
   void unload();
 
-
-
-
-
-
-
-
-
-
-
-
 };
+
+#endif
 

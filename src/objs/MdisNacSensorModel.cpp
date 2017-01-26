@@ -160,12 +160,7 @@ bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
     // The method converged to a root.
     undistortedX = x;
     undistortedY = y;
-#if 0
-    cout << "dx:"  << setprecision(20)<<dx << endl;
-    cout << "dy:"  << setprecision(20)<<dy << endl;
-    cout << "undistortedX:"  << setprecision(20) << undistortedX << endl;
-    cout << "undistortedY:"  << setprecision(20) << undistortedY << endl;
-#endif
+
   }
   else {
     // The method did not converge to a root within the maximum

@@ -1,33 +1,30 @@
-#include "cspiceisd.h"
+#include "CSpiceIsd.h"
+#include "SpiceController.h"
 
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-
 #include <string>
-
-#include "SpiceController.h"
-
-
-
-
 
 using namespace std;
 
-
-  cspiceisd::cspiceisd(string cubeFileName) {
+  CSpiceIsd::CSpiceIsd(string cubeFileName) {
     m_cubeFileString = cubeFileName;
     m_validCube = true;  
     }
 
-
-  cspiceisd::~cspiceisd(){
+  CSpiceIsd::~CSpiceIsd(){
 
   }
 
 
-
-  void cspiceisd::isdJSON(vector<pair<string,double> > * isdList,string sensorModel,
+  /**
+   * @brief CSpiceIsd::isdJSON  Outputs an ISD (Image Support Data) file in JSON format.
+   * @param isdList A list of key-value pairs from the ISD
+   * @param sensorModel  The name of the sensor model
+   * @param filePath  The path name of the output file.
+   */
+  void CSpiceIsd::isdJSON(vector<pair<string,double> > * isdList,string sensorModel,
                          string filePath){
     ofstream os;
     os.open(filePath.c_str(), ofstream::out);
@@ -45,7 +42,12 @@ using namespace std;
   }
 
 
-  void cspiceisd::writeISD(){
+  /**
+   * @brief CSpiceIsd::writeISD  Gets information from the ISIS3 cube and outputs it to
+   * an ISD (or json) file.  This function needs to be split up, and all references to
+   * using the ISIS3 API removed.  Everything needs to be done through the CSpice ISD.
+   */
+  void CSpiceIsd::writeISD(){
 
 #if 0
     if (m_validCube == false) {

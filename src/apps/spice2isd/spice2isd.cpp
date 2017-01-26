@@ -1,7 +1,7 @@
 
 
 #include "SpiceController.h"
-#include "cspiceisd.h"
+#include "CSpiceIsd.h"
 #include <gdal/gdal.h>
 #include <SpiceUsr.h>
 #include <iostream>
@@ -34,7 +34,7 @@ int main(int argc,char *argv[]) {
     vector<pair<string,SpiceDouble> >  isdList;
 
 
-    cspiceisd cspice("blah.cub");
+    CSpiceIsd cspice("blah.cub");
     SpiceController sc;
 
     string kernel1("data/msgr_v231.tf");
@@ -59,20 +59,6 @@ int main(int argc,char *argv[]) {
     furnsh_c("data/msgr_mdis_gm040819_150430v1.bc");
     furnsh_c("data/naif0011.tls");
     furnsh_c("data/messenger_2548.tsc");
-
-
-#if 0
-    sc.loadKernel(kernel1);
-    sc.loadKernel(kernel2);
-    sc.loadKernel(kernel3);
-    sc.loadKernel(kernel4);
-    sc.loadKernel(kernel5);
-    sc.loadKernel(kernel6);
-    sc.loadKernel(kernel7);
-    sc.loadKernel(kernel8);
-    sc.loadKernel(kernel9);
-    sc.loadKernel(kernel10);
-#endif
 
 
     SpiceInt code;
@@ -124,8 +110,6 @@ int main(int argc,char *argv[]) {
     GDALDataset *poDataset;
     GDALRasterBand *poBand;
     int nBlockXSize,nBlockYSize;
-    int bGotMin,bGotMax;
-    double adfMinMax[2];
 
 
     GDALAllRegister();
@@ -143,61 +127,32 @@ int main(int argc,char *argv[]) {
       poBand = poDataset->GetRasterBand(1);
       poBand->GetBlockSize(&nBlockXSize,&nBlockYSize);
 
-      printf( "Block=%dx%d Type=%s, ColorInterp=%s\n",nBlockXSize, nBlockYSize,
-              GDALGetDataTypeName(poBand->GetRasterDataType()),
-              GDALGetColorInterpretationName(poBand->GetColorInterpretation()) );
-
-
-
     //Read a band of data
-
 
       vector<vector<float> > cubeMatrix;
       cubeArray(&cubeMatrix,poBand);
-
       for (int i =0; i < cubeMatrix.size(); i++ ) {
-
         vector<float> v = cubeMatrix[i];
-        for (int j = 0; j < v.size(); j++)
-          cout << v[j] << endl;
+
+        for (int j = 0; j < v.size(); j++) {
+            cout << v[j] << endl;
+        }//end inner-for
 
 
-      }
+      }//end outer-for
 
-
-#if 0
-
-
-
-
-    float *pafScanline;
-    int nXSize = poBand->GetXSize();
-    int nYSize = poBand->GetYSize();
-
-
-
-
-
-
-    for (int j = 0;j<nYSize;j++) {
-
-    pafScanline = (float *)CPLMalloc(sizeof(float)*nXSize);
-    poBand->RasterIO(GF_Read,0,j,nXSize,1,pafScanline,nXSize,1,GDT_Float32,0,0);
-
-    for (int i = 0;i < nXSize;i++)
-      cout << setprecision(10) << pafScanline[i] << endl;
-
-
-    CPLFree(pafScanline);
-    }
-
-#endif
     }  //end else
 
 }
 
-void cubeArray(vector <vector<float> > *cube,GDALRasterBand *poBand) {
 
+/**
+ * @brief cubeArray:  Translates a GDALRasterBand into a 2D vector matrix
+ * @param cube:  The 2D vector matrix which is output by this function.
+ * @param poBand:  The GDALRasterBand obtained from the ISIS3 cube.
+ */
+
+void cubeArray(vector <vector<float> > *cube,GDALRasterBand *poBand) {
 
   vector<float> tempVector;
 
@@ -205,17 +160,17 @@ void cubeArray(vector <vector<float> > *cube,GDALRasterBand *poBand) {
   int nsamps = poBand->GetXSize();
   int nlines = poBand->GetYSize();
 
-
   for (int j = 0;j<nlines;j++) {
 
     pafScanline = (float *)CPLMalloc(sizeof(float)*nsamps);
     poBand->RasterIO(GF_Read,0,j,nsamps,1,pafScanline,nsamps,1,GDT_Float32,0,0);
 
-    for (int i = 0;i < nsamps;i++)
-      tempVector.push_back(pafScanline[i]);
-
+    for (int i = 0;i < nsamps;i++) {
+        tempVector.push_back(pafScanline[i]);
+    }
     cube->push_back(tempVector);
     tempVector.clear();
+    //free the memory allocated to store the current scanline
     CPLFree(pafScanline);
   }
 

@@ -5,7 +5,7 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/")
 
 LINK_DIRECTORIES("${CMAKE_SOURCE_DIR}/lib")
 LINK_DIRECTORIES("/usr/lib64")
-#LINK_DIRECTORIES("${CMAKE_SOURCE_DIR}/src/objs")
+LINK_DIRECTORIES("${CMAKE_SOURCE_DIR}/src/objs")
 
 ADD_LIBRARY(libIsdReader.so SHARED "${CMAKE_SOURCE_DIR}/src/objs/IsdReader.cpp")
 TARGET_LINK_LIBRARIES(libIsdReader.so libcsmapi.so)
@@ -16,6 +16,8 @@ TARGET_LINK_LIBRARIES(libMdisPlugin.so libcsmapi.so)
 
 
 ADD_EXECUTABLE(set set.cpp)
+TARGET_LINK_LIBRARIES(set libIsdReader.so libMdisNacSensorModel.so libMdisPlugin.so libgdal.so)
+
 
 TARGET_LINK_LIBRARIES(set libIsdReader.so)
 TARGET_LINK_LIBRARIES(set libMdisNacSensorModel.so)

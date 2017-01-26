@@ -9,23 +9,20 @@ using namespace std;
 
 
 
-class cspiceisd
+class CSpiceIsd
 {
   public:
-
-    cspiceisd(string cubeFile);
-    ~cspiceisd();
+    CSpiceIsd(string cubeFile);
+   ~CSpiceIsd();
     void isdJSON(vector<pair<string,double> > * isdData,string sensorModel,
                            string filePath);
     void writeISD();
-
 
   private:
 
     string m_cubeFileString;
     bool m_validCube;
     static const int prec =16;
-
 
 };
 
