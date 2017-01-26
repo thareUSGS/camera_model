@@ -262,7 +262,13 @@ class MdisNacSensorModel : public csm::RasterGM {
     virtual void distortionJacobian(double x, double y, double &Jxx,
                                     double &Jxy, double &Jyx, double &Jyy) const;
 
-    
+    /**
+     * Returns the height (meters) from the surface of the body given a ground X and Y.
+     * 
+     * @return @b double Returns height above the surface of the body.
+     */
+    double computeElevation(double x, double y, double z) const;
+
     /**
      * Given a spacecraft position in body-fixed coordinates, determine if the look direction vector
      * intersects the surface of the target body.
@@ -324,6 +330,7 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_transX[3];
     double m_transY[3];
     double m_majorAxis;
+    double m_minorAxis;
     double m_omega;
     double m_phi;
     double m_kappa;

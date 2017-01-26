@@ -252,6 +252,18 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
     missingKeywords.push_back("transx");
   }
   
+  sensorModel->m_majorAxis = 1000 * atof(imageSupportData.param("semi_major_axis").c_str());
+  if (imageSupportData.param("semi_major_axis") == "") {
+    missingKeywords.push_back("semi_major_axis");
+  }
+  // Do we assume that if we do not have a semi-minor axis, then the body is a sphere?
+  if (imageSupportData.param("semi_minor_axis") == "") {
+    sensorModel->m_minorAxis = sensorModel->m_majorAxis;
+  }
+  else {
+    sensorModel->m_minorAxis = 1000 * atof(imageSupportData.param("semi_minor_axis").c_str());
+  }
+  
   // If we are missing necessary keywords from ISD, we cannot create a valid sensor model.
   if (missingKeywords.size() != 0) {
 

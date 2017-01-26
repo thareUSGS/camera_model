@@ -16,6 +16,7 @@
 class TestableMdisNacSensorModel : public MdisNacSensorModel {
   // Give linear algebra methods public accessing when using instances of this class.
   public:
+    using MdisNacSensorModel::computeElevation;
     using MdisNacSensorModel::intersect;
     using MdisNacSensorModel::perpendicular;
     using MdisNacSensorModel::project;
@@ -105,6 +106,14 @@ TEST_F(MdisNacSensorModelTest, imageToGround1) {
 // Tests the getModelState() method with a default constructed MdisNacSensorModel.
 TEST_F(MdisNacSensorModelTest, getModelStateDefault) {
   EXPECT_EQ(defaultMdisNac.getModelState(), std::string());
+}
+
+
+// Test getElevation
+TEST_F(MdisNacSensorModelTest, computeElevationOnSphere) {
+  // (1/4)^2 + (1/2)^2 + z^2 = 1^2; z^2 = 11/16
+  double elevation = testMath.computeElevation(0.25, 0.5, sqrt(11)/4.0);
+  EXPECT_EQ(0.0, elevation);
 }
 
 
