@@ -23,6 +23,7 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_transY[2] = 0.0;
   
   m_majorAxis = 0.0;
+  m_minorAxis = 0.0;
   m_omega = 0.0;
   m_phi = 0.0;
   m_kappa = 0.0;
@@ -343,6 +344,15 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
   
   // Perform the intersection
   return intersect(spacecraftPosition, direction, m_majorAxis);
+}
+
+
+double MdisNacSensorModel::computeElevation(double x, double y, double z) const {
+  // For now, assume a sphere for Mercury. This will change for ellispoids/DEMs.
+  // (radius + elevation)^2 = x^2 + y^2 + z^2
+  // double localRadius = sqrt(x*x + y*y + z*z);
+  // return localRadius - m_majorAxis;
+  return 0;
 }
 
 
