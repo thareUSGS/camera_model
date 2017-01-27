@@ -22,6 +22,7 @@ class TestableMdisNacSensorModel : public MdisNacSensorModel {
     using MdisNacSensorModel::dot;
     using MdisNacSensorModel::magnitude;
     using MdisNacSensorModel::normalize;
+    using MdisNacSensorModel::setFocalPlane;
 };
 
 
@@ -221,3 +222,36 @@ TEST_F(MdisNacSensorModelTest, normalizeVector) {
   EXPECT_EQ((v[1] / sqrt(29.0)), result[1]);
   EXPECT_EQ((v[2] / sqrt(29.0)), result[2]);
 }
+
+
+// Test normalize
+TEST_F(MdisNacSensorModelTest, distortionModel1) {
+  double dx = 0.0;
+  double dy = 0.0;
+  double udx = 0.0;
+  double udy = 0.0;
+  double isis3_udx = 0.0;
+  double isis3_udy = 0.0;
+  testMath.setFocalPlane(dx,dy,udx,udy);
+
+  EXPECT_NEAR(udx,isis3_udx,tolerance);
+  EXPECT_NEAR(udy,isis3_udy,tolerance);
+
+}
+
+TEST_F(MdisNacSensorModelTest, distortionModel2) {
+  double dx = -6.30;
+  double dy = 6.40;
+  double udx = 0.0;
+  double udy = 0.0;
+  double isis3_udx = -6.3036234000160273893698104075156152248383;
+  double isis3_udy = 6.3445144408882310216313271666876971721649;
+  testMath.setFocalPlane(dx,dy,udx,udy);
+
+  EXPECT_NEAR(udx,isis3_udx,tolerance);
+  EXPECT_NEAR(udy,isis3_udy,tolerance);
+
+}
+
+
+

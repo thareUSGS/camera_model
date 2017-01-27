@@ -2,9 +2,14 @@
 #include "MdisNacSensorModel.h"
 
 #include <csm/Error.h>
+#include <iostream>
+#include <iomanip>
+
+using namespace std;
 
 const std::string MdisNacSensorModel::_SENSOR_MODEL_NAME 
                                       = "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so";
+
 
                                       
 MdisNacSensorModel::MdisNacSensorModel() {
@@ -30,6 +35,30 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_ccdCenter = 0.0;
 
 
+#if 0
+  //NAC coefficients 
+  m_odtX[0]=0.0;
+  m_odtX[1]=1.0018542696237999756;
+  m_odtX[2]=-0.0;
+  m_odtX[3]=-0.0;
+  m_odtX[4]=-0.00050944404749411103042;
+  m_odtX[5]=0.0;
+  m_odtX[6]=1.0040104714688599425e-05;
+  m_odtX[7]=0.0;
+  m_odtX[8]=1.0040104714688599425e-05;
+  m_odtX[9]=0.0;
+
+  m_odtY[0]=0.0;
+  m_odtY[1]=0.0;
+  m_odtY[2]=1.0;
+  m_odtY[3]=0.00090600105949967496381;
+  m_odtY[4]=0.0;
+  m_odtY[5]=0.00035748426266207598964;
+  m_odtY[6]=0.0;
+  m_odtY[7]=1.0040104714688599425e-05;
+  m_odtY[8]=0.0;
+  m_odtY[9]=1.0040104714688599425e-05;
+#endif
   m_odtX[0] = 0.0;
   m_odtX[1] = 0.0;
   m_odtX[2] = 0.0;
@@ -51,6 +80,7 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_odtY[7] = 0.0;
   m_odtY[8] = 0.0;
   m_odtY[9] = 0.0;
+
 
 }
 
@@ -87,7 +117,7 @@ bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
   const double tol = 1.4E-5;
 
   // The maximum number of iterations of the Newton-Raphson method.
-  const int maxTries = 20;
+  const int maxTries = 60;
 
   double x;
   double y;
@@ -130,6 +160,7 @@ bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
     // The method converged to a root.
     undistortedX = x;
     undistortedY = y;
+
   }
   else {
     // The method did not converge to a root within the maximum
