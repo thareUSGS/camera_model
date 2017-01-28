@@ -24,9 +24,26 @@ void writeCSV(const string &csvFile,
               const vector< vector<float> > &cubeData,
               const vector< vector<csm::EcefCoord> > &groundPoints);
 
-int main(int argc,char *argv[]) {
+int main(int argc, char *argv[]) {
+  
+  // Default cube and isd for now so this will run if user doesn't input these files.
+  string isdFile("../../../tests/data/EN1007907102M.json");
+  string cubeFile("../../../tests/data/EN1007907102M.cub");
+  
+  // User can provide ISD and cube if desired.
+  if (argc == 3) {
+    isdFile = argv[1];
+    cubeFile = argv[2];
+  }
+  else {
+    cout << "Usage: set <ISD.json> <cube.cub>\n";
+    cout << "Provide an ISD .json file and its associated cube .cub file.\n";  
+  }
 
-  csm::Isd *isd = readISD("../../../tests/data/EN1007907102M.json");
+  csm::Isd *isd = readISD(isdFile);
+  if (isd == nullptr) {
+    return 1;
+  }
 
   // Create the plugin 
   MdisPlugin plugin;
@@ -39,6 +56,7 @@ int main(int argc,char *argv[]) {
   }
   catch (csm::Error &e) {
     cout << e.what() << endl;
+    delete isd;
     if (model != nullptr) {
       delete model;
     }
@@ -47,6 +65,7 @@ int main(int argc,char *argv[]) {
 
   if (model == nullptr) {
      cout << "Could not construct the sensor model from the plugin." << endl;
+     delete isd;
      return 0;
   }
   
@@ -66,7 +85,7 @@ int main(int argc,char *argv[]) {
 
   //Read from a cube using the GDAL API, and outputs the DN values to a 2D vector matrix
   //string cubePath("../../../tests/data/CN0108840044M_IF_5_NAC_spiced.cub");
-  string cubePath { "../../../tests/data/EN1007907102M.cub" };
+  string cubePath(cubeFile);
   GDALDataset *poDataset;
   GDALRasterBand *poBand;
   int nBlockXSize, nBlockYSize;
@@ -80,6 +99,9 @@ int main(int argc,char *argv[]) {
 
   if (poDataset == NULL) {
     cout << "Could not open the:  " + cubePath  << endl;
+    delete isd;
+    delete model;
+    return 1;
   }
 
   else {
@@ -111,6 +133,8 @@ int main(int argc,char *argv[]) {
 
   }  //end else
  
+  delete isd;
+  delete model;
   exit (EXIT_SUCCESS);
 }
 
@@ -173,6 +197,6 @@ void writeCSV(const string &csvFilename,
   
   else {
     cout << "\nUnable to open file \"" << csvFilename << " for writing." << endl;
-    exit(EXIT_FAILURE);
+    return;
   }
 }
