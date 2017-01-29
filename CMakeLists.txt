@@ -30,7 +30,7 @@ else()
 endif()
 
 # Find Spice
-OPTION (USE_SYSTEM_SPICE "Use system libraries for the NAIFSpice Toolkit" ON)
+OPTION (USE_SYSTEM_SPICE "Use system libraries for the NAIFSpice Toolkit" OFF)
 if (${USE_SYSTEM_SPICE} MATCHES "OFF")
   INCLUDE("${CMAKE_MODULE_PATH}/External-Spice.cmake")
 endif()
@@ -65,3 +65,7 @@ IF (ENABLE_TESTS)
 	# etc. as appropriate
 	ADD_SUBDIRECTORY(tests)
 ENDIF(ENABLE_TESTS)
+
+# Find libcsmapi.so
+FIND_LIBRARY(CSMAPI_LIBRARY csmapi "${CMAKE_SOURCE_DIR}/lib")
+

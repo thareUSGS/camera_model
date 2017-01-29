@@ -1,8 +1,11 @@
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/mdis")
-INCLUDE_DIRECTORIES("../../../INSTALL/cspice/include")
-LINK_DIRECTORIES("../../../INSTALL/cspice/lib")
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/INSTALL/cspice/include")
+LINK_DIRECTORIES("${CMAKE_SOURCE_DIR}/INSTALL/cspice/lib")
 LINK_DIRECTORIES("/usr/lib64")
 
+# Jenkins puts its builds under _build dir, probably a better way to do this
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/_build/INSTALL/cspice/include")
+LINK_DIRECTORIES("${CMAKE_SOURCE_DIR}/_build/INSTALL/cspice/lib")
 
 ADD_LIBRARY(CSpiceIsd SHARED CSpiceIsd.cpp)
 ADD_LIBRARY(SpiceController SHARED SpiceController.cpp)
