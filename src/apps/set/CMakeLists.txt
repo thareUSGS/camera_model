@@ -6,4 +6,4 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/")
 #LINK_DIRECTORIES("${CMAKE_SOURCE_DIR}/src/objs")
 
 ADD_EXECUTABLE(set set.cpp)
-TARGET_LINK_LIBRARIES(set ${CSMAPI_LIBRARY} IsdReader MdisNacSensorModel MdisPlugin gdal)
+TARGET_LINK_LIBRARIES(set dl ${CSMAPI_LIBRARY} IsdReader MdisNacSensorModel MdisPlugin gdal)

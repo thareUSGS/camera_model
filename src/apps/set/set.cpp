@@ -1,3 +1,4 @@
+#include <dlfcn.h>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -5,6 +6,7 @@
 
 #include <csm.h>
 #include <Isd.h>
+#include <Plugin.h>
 
 #include <gdal/gdal.h>
 #include <gdal/gdal_priv.h>
@@ -45,14 +47,27 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  // Create the plugin 
-  MdisPlugin plugin;
+  // Find plugins TODO: probably need a dedicated area for plugins to load
+  void *pluginFile = dlopen("../../../src/objs/libMdisPlugin.so", RTLD_LAZY);
+  if (pluginFile == nullptr) {
+    cout << "Could not load plugin." << endl;
+    return 1;
+  }
+
+  // Choose the correct plugin (e.g. framing v. line-scan?)
+  //const csm::PluginList &plugins = csm::Plugin::getList();
+  const csm::Plugin *plugin = csm::Plugin::findPlugin("UsgsAstroFrameMdisPluginCSM");
+  if (plugin == nullptr) {
+    cout << "Could not find plugin: " << "UsgsAstroFrameMdisPluginCSM" << endl;
+    return 1;
+  }
+
   MdisNacSensorModel *model;
   
   // Initialize the MdisNacSensorModel from the ISD using the plugin
   try {
     model = dynamic_cast<MdisNacSensorModel*>
-            (plugin.constructModelFromISD(*isd, "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so"));
+            (plugin->constructModelFromISD(*isd, "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so"));
   }
   catch (csm::Error &e) {
     cout << e.what() << endl;
@@ -135,6 +150,7 @@ int main(int argc, char *argv[]) {
  
   delete isd;
   delete model;
+  dlclose(pluginFile);
   exit (EXIT_SUCCESS);
 }
 
