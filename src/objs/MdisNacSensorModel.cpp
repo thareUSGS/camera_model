@@ -311,6 +311,15 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt
   double sample = pixelX + m_ccdCenter - 0.5;
   double line = pixelY + m_ccdCenter - 0.5;
   
+  bool outOfBounds = false;
+  if (sample > m_nSamples || sample < 0.0 || line > m_nLines || line < 0.0) {
+    outOfBounds = true;
+  }
+  
+  if (WarningList != nullptr) {
+    WarningList->push_front(csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS);
+  }
+  
   return csm::ImageCoord(line, sample);
 }
        
