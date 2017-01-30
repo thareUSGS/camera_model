@@ -323,7 +323,31 @@ class MdisNacSensorModel : public csm::RasterGM {
      * Normalizes the vector (e.g. returns a unit vector).
      */
     std::vector<double> normalize(const std::vector<double> &v) const;
-          
+    
+    /**
+     * Initializes a rotation matrix from omega, phi, kappa.
+     * 
+     * @param omega The omega rotation in radians.
+     * @param phi The phi rotation in radians.
+     * @param kappa The kappa rotation in radians.
+     * 
+     * @return @b vector<double> Returns a 9-element vector representing the 3x3 rotation matrix.
+     */
+    std::vector<double> createRotationMatrix(const double omega,
+                                             const double phi,
+                                             const double kappa) const;
+    
+   /**
+     * Rotates a 3D column vector by a rotation matrix.
+     * 
+     * @param v 3-element column vector to rotate.
+     * @param rotationMatrix 9-element vector representing a 3x3 rotation matrix.
+     * 
+     * @return @b vector<double> Returns the rotated vector. 
+     */
+    std::vector<double> rotate(const std::vector<double> &v, 
+                               const std::vector<double> &rotationMatrix,
+                               bool invert = false) const;
     
   private:
     
