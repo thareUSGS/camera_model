@@ -316,8 +316,12 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt
     outOfBounds = true;
   }
   
-  if (WarningList != nullptr) {
-    WarningList->push_front(csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS);
+  if (warnings != nullptr) {
+    std::string msg("The image coordinate is outside the image dimensions.");
+    std::string func("MdisNacSensorModel::imageToGround");
+    warnings->push_front(csm::Warning(csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
+                                      msg,
+                                      func));
   }
   
   return csm::ImageCoord(line, sample);
