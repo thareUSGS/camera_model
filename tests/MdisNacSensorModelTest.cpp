@@ -1,90 +1,21 @@
-#include <MdisPlugin.h>
-#include <MdisNacSensorModel.h>
-#include <IsdReader.h>
+#include <string>
 
 #include <csm/Isd.h>
 
 #include <gtest/gtest.h>
 
+#include <MdisPlugin.h>
+#include <MdisNacSensorModel.h>
+#include <IsdReader.h>
 
-/**
- * Sub-class MdisNacSensorModel to get test its protected linear algebra methods.
- * 
- * We should be testing the protected methods of MdisNacSensorModel since imageToGround
- * depends on intersect, which depends on project, etc.
- */
-class TestableMdisNacSensorModel : public MdisNacSensorModel {
-  // Give linear algebra methods public accessing when using instances of this class.
-  public:
-    using MdisNacSensorModel::computeElevation;
-    using MdisNacSensorModel::intersect;
-    using MdisNacSensorModel::perpendicular;
-    using MdisNacSensorModel::project;
-    using MdisNacSensorModel::dot;
-    using MdisNacSensorModel::magnitude;
-    using MdisNacSensorModel::normalize;
-    using MdisNacSensorModel::setFocalPlane;
-};
+#include "MdisNacSensorModelTest.h"
 
-
-// Set up a fixture (i.e. objects we can use throughout test)
-class MdisNacSensorModelTest : public ::testing::Test {
-  protected:
-    
-    // Per test-case setup and teardown (e.g. once for this MdisNacSensorModelTest)
-    static void SetUpTestCase() {
-      dataFile = "./data/EN1007907102M.json";
-      isd = readISD(dataFile);
-      // printISD(*isd);
-      
-      // Make sure the isd was read correctly.
-      if (isd == nullptr) {
-        FAIL() << "Could not create isd from file: " << dataFile;
-      }
-      
-      // Create a model from the ISD so we can test a valid image.
-      std::string modelName = MdisNacSensorModel::_SENSOR_MODEL_NAME;
-      csm::Model *validModel = mdisPlugin.constructModelFromISD(*isd, modelName);
-      
-      // We could static_cast, but may be hard to debug if it doesn't correctly cast.
-      mdisModel = dynamic_cast<MdisNacSensorModel *>(validModel);
-      std::cout << "Construction model: " << mdisModel << "\n";
-      
-      // Fatal failure if the downcast doesn't work
-      if (mdisModel == nullptr) {
-        FAIL() << "Could not downcast Model* to MdisNacSensorModel*.";
-      }
-    }
-    
-    static void TearDownTestCase() {
-      delete isd;
-      delete mdisModel;
-    }
-    
-    static csm::Isd *isd;                 // ISD converted from JSON to use for creating model.
-    static std::string dataFile;          // JSON data file to be converted to ISD for testing.
-    static MdisPlugin mdisPlugin;         // Plugin used to create a model from ISD.
-    static MdisNacSensorModel *mdisModel; // MDIS-NAC sensor model created with ISD.
-    
-    
-    // Per test setup and teardown (e.g. each TEST_F)
-    virtual void SetUp() {
-      tolerance = 0.00001;
-    }
-
-    virtual void TearDown() {}
-    
-    double tolerance;                     // Tolerance to be used for double comparison.
-    MdisNacSensorModel defaultMdisNac;    // A default constructed MdisNacSensorModel.
-    TestableMdisNacSensorModel testMath;  // Subclassed MdisNacSensorModel for protected methods.
-};
-
-
+bool MdisNacSensorModelTest::setupFixtureFailed = false;
+std::string MdisNacSensorModelTest::setupFixtureError;
 csm::Isd *MdisNacSensorModelTest::isd = nullptr;
 std::string MdisNacSensorModelTest::dataFile;
 MdisPlugin MdisNacSensorModelTest::mdisPlugin;
 MdisNacSensorModel *MdisNacSensorModelTest::mdisModel = nullptr;
-
 
 /* 
  * Test imageToGround - truth extracted as follows:
@@ -97,6 +28,12 @@ MdisNacSensorModel *MdisNacSensorModelTest::mdisModel = nullptr;
  * Check "XYZ" -> { 1132.18, -1597.75, 1455.66 }
  */
 TEST_F(MdisNacSensorModelTest, imageToGround1) {
+
+  // gtest #247 work-around
+  if (setupFixtureFailed) {
+    FAIL() << setupFixtureError;
+  }
+
   // CSM Line/Sample center = 512, 512
   csm::ImageCoord point(512.0, 512.0);
   double height = 0.0;  
@@ -110,6 +47,11 @@ TEST_F(MdisNacSensorModelTest, imageToGround1) {
 
 // Test groundToImage
 TEST_F(MdisNacSensorModelTest, groundToImage1) {
+  // gtest #247 work-around
+  if (setupFixtureFailed) {
+    FAIL() << setupFixtureError;
+  }
+  
   double x = 1132.18*1000;
   double y = -1597.75*1000;
   double z = 1455.66*1000;

@@ -66,3 +66,5 @@ IF (ENABLE_TESTS)
 	ADD_SUBDIRECTORY(tests)
 ENDIF(ENABLE_TESTS)
 
+# Define the test data directory (for gtesting)
+SET(TESTDATADIR ${CMAKE_SOURCE_DIR}/tests/data)
