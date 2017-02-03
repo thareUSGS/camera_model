@@ -342,6 +342,7 @@ class MdisNacSensorModel : public csm::RasterGM {
      * 
      * @param v 3-element column vector to rotate.
      * @param rotationMatrix 9-element vector representing a 3x3 rotation matrix.
+     * @param invert If true, performs an inverse rotation.
      * 
      * @return @b vector<double> Returns the rotated vector. 
      */
