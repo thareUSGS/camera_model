@@ -1,3 +1,4 @@
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -23,6 +24,10 @@ void writeCSV(const string &csvFile,
               const vector<string> &csvHeaders,
               const vector< vector<float> > &cubeData,
               const vector< vector<csm::EcefCoord> > &groundPoints);
+void writeCSV(const string &csvFilename,
+              const vector<string> &csvHeaders,
+              const vector< vector<float> > &cubeData,
+              const vector< vector< vector<float> > > &latLonPoints);
 
 int main(int argc, char *argv[]) {
   
@@ -119,17 +124,43 @@ int main(int argc, char *argv[]) {
     vector< vector<csm::EcefCoord> > groundPoints;
     for (int line = 0; line < cubeMatrix.size(); line++) {
       vector<csm::EcefCoord> groundLine;
+      
       for (int sample = 0; sample < cubeMatrix[line].size(); sample++) {
         csm::ImageCoord imagePoint(line + 1, sample + 1);
         groundLine.push_back(model->imageToGround(imagePoint, 0.0));
       }
       groundPoints.push_back(groundLine);
     }
+    
+    // calculate the radius
+    float r = sqrt(groundPoints[0][0].x * groundPoints[0][0].x + 
+                    groundPoints[0][0].y * groundPoints[0][0].y + 
+                    groundPoints[0][0].z * groundPoints[0][0].z);
+    
+    // calculate the lat & lon for each ground coordinate
+    vector< vector < vector<float> > > latLonPoints;
+    for (int i = 0; i < cubeMatrix.size(); i++) {
+      vector< vector<float> > latLonLine;
+      
+      for (int j = 0; j < cubeMatrix[0].size(); j++) {  
+        // calculate the latitude & longitude
+        vector<float> latLon;
+        
+        float theta = acos(groundPoints[i][j].z / r); // lat in radians
+        float phi = atan2(groundPoints[i][j].y, groundPoints[i][j].x); // lon in radians
+        
+        latLon.push_back(theta * 180 / M_PI);
+        latLon.push_back(phi * 180 / M_PI);
+        
+        latLonLine.push_back(latLon);
+      }
+      latLonPoints.push_back(latLonLine);
+    }
         
     // Write to csv file
     string csvFilename("ground.csv");
-    vector<string> csvHeaders { "Line", "Sample", "DN", "X (km)", "Y (km)", "Z (km)" };
-    writeCSV(csvFilename, csvHeaders, cubeMatrix, groundPoints);
+    vector<string> csvHeaders { "Line", "Sample", "DN", "Latitude", "Longitude" };
+    writeCSV(csvFilename, csvHeaders, cubeMatrix, latLonPoints);
 
   }  //end else
  
@@ -174,6 +205,7 @@ void writeCSV(const string &csvFilename,
               const vector<string> &csvHeaders,
               const vector< vector<float> > &cubeData,
               const vector< vector<csm::EcefCoord> > &groundPoints) {
+  
   ofstream csvFile(csvFilename);
   if (csvFile.is_open()) {
     
@@ -187,10 +219,55 @@ void writeCSV(const string &csvFilename,
     
     // Write the csv records
     for (int line = 0; line < cubeData.size(); line++) {
+      
       for (int sample = 0; sample < cubeData[line].size(); sample++) {
         csm::EcefCoord ground = groundPoints[line][sample];
         csvFile << line + 1 << ", " << sample + 1 << ", " << cubeData[line][sample] << ", "
                 << ground.x/1000 << ", " << ground.y/1000 << ", " << ground.z/1000 << "\n";
+      }
+    }
+  }
+  
+  else {
+    cout << "\nUnable to open file \"" << csvFilename << " for writing." << endl;
+    return;
+  }
+}
+
+
+/**
+ * Writes a CSV file to the given destination.
+ * 
+ * This CSV will contain a DN, Latitude, and Longitude for each Line,Sample of the input cube data.
+ * 
+ * @param csvFilename Name of the output CSV file to write to.
+ * @param csvHeaders Vector containing the header elements to write to the CSV file.
+ * @param cubeData Matrix of cube DNs.
+ * @param latLonPoints Matrix of latitude/longitude points for the image pixels.
+ */
+void writeCSV(const string &csvFilename,
+              const vector<string> &csvHeaders,
+              const vector< vector<float> > &cubeData,
+              const vector< vector< vector<float> > > &latLonPoints) {
+  
+  ofstream csvFile(csvFilename);
+  if (csvFile.is_open()) {
+    
+    // Write the csv header
+    for (int str = 0; str < csvHeaders.size() - 1; str++) {
+      csvFile << csvHeaders[str] << ", ";
+    }
+    
+    // Write the last header element
+    csvFile << csvHeaders[csvHeaders.size() - 1] << "\n";
+    
+    // Write the csv records
+    for (int line = 0; line < cubeData.size(); line++) {
+      
+      for (int sample = 0; sample < cubeData[line].size(); sample++) {
+        vector<float> latLon = latLonPoints[line][sample];
+        csvFile << line + 1 << ", " << sample + 1 << ", " << cubeData[line][sample] << ", "
+                << latLon[0] << ", " << latLon[1] << "\n";
       }
     }
   }
