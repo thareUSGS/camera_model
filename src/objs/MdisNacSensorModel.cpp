@@ -268,6 +268,7 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt
                                                   double desiredPrecision, 
                                                   double *achievedPrecision, 
                                                   csm::WarningList *warnings) const {
+  // Get the rotation matrix from ISD supplied omega, phi, kappa
   std::vector<double> rotation = createRotationMatrix(m_omega, m_phi, m_kappa);
   
   // Determine the center look direction (centerX, centerY, f) of the sensor in body-fixed
@@ -311,17 +312,19 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt
   double sample = pixelX + m_ccdCenter - 0.5;
   double line = pixelY + m_ccdCenter - 0.5;
   
+  // Check if the computed line,sample coordinate is within the image dimensions
   bool outOfBounds = false;
   if (sample > m_nSamples || sample < 0.0 || line > m_nLines || line < 0.0) {
     outOfBounds = true;
   }
-  
-  if (warnings != nullptr) {
-    std::string msg("The image coordinate is outside the image dimensions.");
-    std::string func("MdisNacSensorModel::imageToGround");
-    warnings->push_front(csm::Warning(csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
-                                      msg,
-                                      func));
+  if (outOfBounds) {
+    if (warnings != nullptr) {
+      std::string msg("The image coordinate is outside the image dimensions.");
+      std::string func("MdisNacSensorModel::imageToGround");
+      warnings->push_front(csm::Warning(csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
+                                        msg,
+                                        func));
+    }
   }
   
   return csm::ImageCoord(line, sample);
