@@ -263,8 +263,91 @@ class MdisNacSensorModel : public csm::RasterGM {
                                     double &Jxy, double &Jyx, double &Jyy) const;
 
 
+<<<<<<< HEAD
 
 
+=======
+    /**
+     * Given a spacecraft position in body-fixed coordinates, determine if the look direction vector
+     * intersects the surface of the target body.
+     * 
+     * @param point 3-element vector representing the spacecraft's position in body-fixed.-
+     * @param direction 3-element vector representing the camera's look direction in body-fixed.
+     * @param radius Radius for the spherical body.
+     * 
+     * @return @b vector<double> Returns a 3-element vector representing the intersection in body-fixed.
+     *                           If no intersection, the vector will contain 0's.
+     * 
+     * This code is adapted from the sensorModelRefactor branch's Geometry3D::intersect() method.
+     */
+    csm::EcefCoord intersect(const std::vector<double> &point, const std::vector<double> &direction, double radius) const;
+    
+    /**
+     * Projects the first vector onto the second vector, then finds the vector that is
+     * perpendicular to the projected vector.
+     * 
+     * This function is adapted from the sensorModelRefactor branch's
+     * LinearAlgebra::perpendicular() method (which is adapted from naif's vperp).
+     *
+     * @param v1 Vector to project.
+     * @param v2 Vector to project on to.
+     * 
+     * @return @b vector<double> Returns a vector perpendicular to the first vector
+     *                           projected on the second vector.
+     */
+    std::vector<double> perpendicular(const std::vector<double> &v1, const std::vector<double> &v2) const;
+    
+    /**
+     * Determines the projection of the first vector onto the second vector.
+     * 
+     * @param v1 First vector to project.
+     * @param v2 Second vector that first vector is being projected onto.
+     * 
+     * @return @b vector<double> Returns the first vector projected onto the second.
+     */
+    std::vector<double> project(const std::vector<double> &v1, const std::vector<double> &v2) const;
+    
+    /**
+     * Returns the dot product of two vectors.
+     */
+    double dot(const std::vector<double> &v1, const std::vector<double> &v2) const;
+    
+    /**
+     * Returns the magnitude of a vector.
+     */
+    double magnitude(const std::vector<double> &v) const;
+    
+    /**
+     * Normalizes the vector (e.g. returns a unit vector).
+     */
+    std::vector<double> normalize(const std::vector<double> &v) const;
+    
+    /**
+     * Initializes a rotation matrix from omega, phi, kappa.
+     * 
+     * @param omega The omega rotation in radians.
+     * @param phi The phi rotation in radians.
+     * @param kappa The kappa rotation in radians.
+     * 
+     * @return @b vector<double> Returns a 9-element vector representing the 3x3 rotation matrix.
+     */
+    std::vector<double> createRotationMatrix(const double omega,
+                                             const double phi,
+                                             const double kappa) const;
+    
+   /**
+     * Rotates a 3D column vector by a rotation matrix.
+     * 
+     * @param v 3-element column vector to rotate.
+     * @param rotationMatrix 9-element vector representing a 3x3 rotation matrix.
+     * 
+     * @return @b vector<double> Returns the rotated vector. 
+     */
+    std::vector<double> rotate(const std::vector<double> &v, 
+                               const std::vector<double> &rotationMatrix,
+                               bool invert = false) const;
+    
+>>>>>>> master
   private:
 
     double m_transX[3];

@@ -1,9 +1,9 @@
-
 #include "MdisNacSensorModel.h"
 
-#include <csm/Error.h>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+
+#include <csm/Error.h>
 
 using namespace std;
 
@@ -265,7 +265,6 @@ void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, do
 
 }
 
-
 csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt,
                               double desiredPrecision,
                               double *achievedPrecision,
@@ -336,6 +335,7 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
   double xl, yl, zl, lo, so;
   lo = line - m_line_pp;
   so - line - m_sample_pp;
+
 
   // Apply the distortion model
   double dlo, dso;
