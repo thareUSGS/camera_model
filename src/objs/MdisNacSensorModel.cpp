@@ -1,9 +1,9 @@
-
 #include "MdisNacSensorModel.h"
 
-#include <csm/Error.h>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+
+#include <csm/Error.h>
 
 using namespace std;
 
@@ -265,14 +265,66 @@ void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, do
 
 
 csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt, 
-                              double desiredPrecision, 
-                              double *achievedPrecision, 
-                              csm::WarningList *warnings) const {
-
+                                                  double desiredPrecision, 
+                                                  double *achievedPrecision, 
+                                                  csm::WarningList *warnings) const {
+  std::vector<double> rotation = createRotationMatrix(m_omega, m_phi, m_kappa);
   
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::groundToImage");
+  // Determine the center look direction (centerX, centerY, f) of the sensor in body-fixed
+  // (e.g. the sensor's optical axis rotated into body-fixed frame)
+  double centerX = 0.0;
+  double centerY = 0.0;
+  std::vector<double> sensorLookC { 0.0, 0.0, m_focalLength };
+  std::vector<double> sensorLookB = rotate(sensorLookC, rotation);
+  
+  // Find the look vector from the sensor center look to the ground point in body-fixed
+  std::vector<double> lookGroundB {
+    groundPt.x - m_spacecraftPosition[0],
+    groundPt.y - m_spacecraftPosition[1],
+    groundPt.z - m_spacecraftPosition[2],
+  };
+  
+  // Normalize by sacling the sensor-to-ground look to the sensor center look in body-fixed
+  double sensorLookBMag = sqrt( dot(sensorLookB, sensorLookB) );
+  double lookGroundBMag = sqrt( dot(lookGroundB, lookGroundB) );
+  double scale = sensorLookBMag / lookGroundBMag;
+  lookGroundB[0] = scale * lookGroundB[0]; 
+  lookGroundB[1] = scale * lookGroundB[1]; 
+  lookGroundB[2] = scale * lookGroundB[2]; 
+    
+  // Rotate the sensor-to-ground look vector from body-fixed to sensor frame (inverse rotation)
+  std::vector<double> lookGroundC = rotate(lookGroundB, rotation, true);
+    
+  // Scale the sensor-to-ground sensor frame vector so that it intersects the focal plane
+  // (i.e. scale it so its Z component equals the sensor's focal length)
+  scale = m_focalLength / lookGroundC[2];
+  double focalPlaneX = lookGroundC[0] * scale;
+  double focalPlaneY = lookGroundC[1] * scale;
+  
+  // Distortion
+  
+  // Convert focal plane mm to pixels
+  double pixelX = focalPlaneX * (1.0 / m_transX[1]);
+  double pixelY = focalPlaneY * (1.0 / m_transY[2]);
+  
+  // Convert pixels to line,sample
+  double sample = pixelX + m_ccdCenter - 0.5;
+  double line = pixelY + m_ccdCenter - 0.5;
+  
+  bool outOfBounds = false;
+  if (sample > m_nSamples || sample < 0.0 || line > m_nLines || line < 0.0) {
+    outOfBounds = true;
+  }
+  
+  if (warnings != nullptr) {
+    std::string msg("The image coordinate is outside the image dimensions.");
+    std::string func("MdisNacSensorModel::imageToGround");
+    warnings->push_front(csm::Warning(csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
+                                      msg,
+                                      func));
+  }
+  
+  return csm::ImageCoord(line, sample);
 }
        
        
@@ -546,6 +598,51 @@ std::vector<double> MdisNacSensorModel::normalize(const std::vector<double> &v) 
   n[2] = v[2] / mag;
   return n;
 }
+
+
+std::vector<double> MdisNacSensorModel::createRotationMatrix(const double omega,
+                                                             const double phi,
+                                                             const double kappa) const {
+  // Trigonometric functions for rotation matrix
+  const double sinw = std::sin(omega);
+  const double sinp = std::sin(phi);
+  const double sink = std::sin(kappa);
+  const double cosw = std::cos(omega);
+  const double cosp = std::cos(phi);
+  const double cosk = std::cos(kappa);
+  
+  std::vector<double> m(9);
+  m[0] = cosp * cosk;
+  m[1] = cosw * sink + sinw * sinp * cosk;
+  m[2] = sinw * sink - cosw * sinp * cosk;
+  m[3] = -1 * cosp * sink;
+  m[4] = cosw * cosk - sinw * sinp * sink;
+  m[5] = sinw * cosk + cosw * sinp * sink;
+  m[6] = sinp;
+  m[7] = -1 * sinw * cosp;
+  m[8] = cosw * cosp;
+  
+  return m;
+}
+
+
+std::vector<double> MdisNacSensorModel::rotate(const std::vector<double> &v,
+                                               const std::vector<double> &rotationMatrix,
+                                               bool invert) const {
+  std::vector<double> rotated(3);
+  if (!invert) {
+    rotated[0] = rotationMatrix[0] * v[0] + rotationMatrix[1] * v[1] + rotationMatrix[2] * v[2];
+    rotated[1] = rotationMatrix[3] * v[0] + rotationMatrix[4] * v[1] + rotationMatrix[5] * v[2];
+    rotated[2] = rotationMatrix[6] * v[0] + rotationMatrix[7] * v[1] + rotationMatrix[8] * v[2];
+  }
+  else {
+    rotated[0] = rotationMatrix[0] * v[0] + rotationMatrix[3] * v[1] + rotationMatrix[6] * v[2];
+    rotated[1] = rotationMatrix[1] * v[0] + rotationMatrix[4] * v[1] + rotationMatrix[7] * v[2];
+    rotated[2] = rotationMatrix[2] * v[0] + rotationMatrix[5] * v[1] + rotationMatrix[8] * v[2];
+  }
+  return rotated;
+}
+
 
 csm::EcefCoordCovar MdisNacSensorModel::imageToGround(const csm::ImageCoordCovar &imagePt, double height, 
                                   double heightVariance, double desiredPrecision, 

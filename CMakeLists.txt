@@ -66,6 +66,5 @@ IF (ENABLE_TESTS)
 	ADD_SUBDIRECTORY(tests)
 ENDIF(ENABLE_TESTS)
 
-# Find libcsmapi.so
-FIND_LIBRARY(CSMAPI_LIBRARY csmapi "${CMAKE_SOURCE_DIR}/lib")
-
+# Define the test data directory (for gtesting)
+SET(TESTDATADIR ${CMAKE_SOURCE_DIR}/tests/data)
