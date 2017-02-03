@@ -10,6 +10,8 @@
 
 #include "MdisNacSensorModel.h"
 
+// Create static instance of self for plugin registration to work with csm::Plugin
+const MdisPlugin MdisPlugin::m_registeredPlugin;
 
 MdisPlugin::MdisPlugin() {
 }
