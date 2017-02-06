@@ -16,6 +16,19 @@ class MdisNacSensorModel : public csm::RasterGM {
     MdisNacSensorModel();
     ~MdisNacSensorModel();
     
+    /**
+     * Given a body-fixed ground point, compute the line,sample on the image.
+     *
+     * @param groundPt Body-fixed XYZ coordinate of ground point on target body.
+     * @param desiredPrecision (not used currently)
+     * @param achievedPrecision (not used currently)
+     * @param warnings (not used currently)
+     *
+     * @returns @b csm::ImageCoord Line,sample on the image.
+     *
+     * @internal
+     *   @todo Check if the returned line,sample is within image dimensions.
+     */
     virtual csm::ImageCoord groundToImage(const csm::EcefCoord &groundPt, 
                                      double desiredPrecision=0.001, 
                                      double *achievedPrecision=NULL, 
@@ -342,6 +355,7 @@ class MdisNacSensorModel : public csm::RasterGM {
      * 
      * @param v 3-element column vector to rotate.
      * @param rotationMatrix 9-element vector representing a 3x3 rotation matrix.
+     * @param invert If true, performs an inverse rotation.
      * 
      * @return @b vector<double> Returns the rotated vector. 
      */
