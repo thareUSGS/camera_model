@@ -48,6 +48,7 @@ ADD_SUBDIRECTORY(src)
 
 # To enable tests pass -DENABLE_TESTS=true to the cmake command
 IF (ENABLE_TESTS)
+  ENABLE_TESTING()
 	# Download and unpack googletest at configure time
 	CONFIGURE_FILE(tests/CMakeGTEST.txt.in
 	               googletest-download/CMakeLists.txt)
@@ -65,6 +66,7 @@ IF (ENABLE_TESTS)
 	# Now simply link your own targets against gtest, gmock,
 	# etc. as appropriate
 	ADD_SUBDIRECTORY(tests)
+
 ENDIF(ENABLE_TESTS)
 
 # Define the test data directory (for gtesting)
