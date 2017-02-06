@@ -271,9 +271,9 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt
                               csm::WarningList *warnings) const {
 
 double xl, yl, zl;
-xl = m_spacecraftPoition[0];
-yl = m_spacecraftPoition[1];
-zl = m_spacecraftPoition[2];
+xl = m_spacecraftPosition[0];
+yl = m_spacecraftPosition[1];
+zl = m_spacecraftPosition[2];
 
 double x, y, z;
 x = groundPt.x;
@@ -286,20 +286,22 @@ yo = yl - y;
 zo = zl - z;
 
 double f;
-f = m_focalLength
+f = m_focalLength;
 
 // Camera rotation matrix
 double m[3][3];
 calcRotationMatrix(m);
 
 // Sensor position
-double line, sample;
+double line, sample, denom;
 
 denom = m[0][2] * xo + m[1][2] * yo + m[2][2] * zo;
 sample = (-f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_sample_pp;
 line = (-f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_line_pp;
 
-return csm:ImaggeCoord(line, sample);
+// Apply the distortion to the line/sample location and then convert back to line/sample
+
+return csm::ImageCoord(line, sample);
 
 }
 
@@ -349,11 +351,12 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
   double xc, yc, zc;
   xc = m_spacecraftPosition[0];
   yc = m_spacecraftPosition[1];
-  zc = m_spacecraftPoition[2];
+  zc = m_spacecraftPosition[2];
   // Intersect with some height about the ellipsoid.
   losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z);
 
   return csm::EcefCoord(x, y, z);
+}
 
 csm::EcefCoordCovar MdisNacSensorModel::imageToGround(const csm::ImageCoordCovar &imagePt, double height,
                                   double heightVariance, double desiredPrecision,
@@ -787,8 +790,8 @@ void MdisNacSensorModel::losEllipsoidIntersect(
    // coordinate system with origin at the center of the earth.
 
    double ap, bp, k;
-   ap = m__semiMajorAxis + height;
-   bp = m_semiMinorAxis + height;
+   ap = m_majorAxis + height;
+   bp = m_minorAxis + height;
    k = ap * ap / (bp * bp);
 
    // Solve quadratic equation for scale factor
