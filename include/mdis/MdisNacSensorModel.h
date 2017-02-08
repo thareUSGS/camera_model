@@ -59,16 +59,39 @@ class MdisNacSensorModel : public csm::RasterGM {
                                            double *achievedPrecision=NULL, 
                                            csm::WarningList *warnings=NULL) const;
                                            
+    /**
+     * Determines the unit look direction of the sensor (in body-fixed frame) from a given
+     * line and sample.
+     *
+     * @param imagePt Point on the image in line,sample sacpe to determine look direction from.
+     * @param groundPt (not used)
+     * @param desiredPrecision (not used)
+     * @param achievedPrecision (not used)
+     * @param warnings List of any warning that may have occurred.
+     * 
+     * @return @b csm::EcefLocus Returns the sensor's unit look direction and origin (body-fixed).
+     */
     virtual csm::EcefLocus imageToProximateImagingLocus(const csm::ImageCoord &imagePt, 
-                                                      const csm::EcefCoord &groundPt, 
-                                                      double desiredPrecision=0.001, 
-                                                      double *achievedPrecision=NULL, 
-                                                      csm::WarningList *warnings=NULL) const;
+                                                        const csm::EcefCoord &groundPt, 
+                                                        double desiredPrecision=0.001, 
+                                                        double *achievedPrecision=NULL, 
+                                                        csm::WarningList *warnings=NULL) const;
                                                       
+    /**
+     * Determines the unit look direction of the sensor (in body-fixed frame) from a given
+     * line and sample.
+     * 
+     * @param imagePt Point on the image in line,sample space to determine look direction from.
+     * @param desiredPrecision (not used)
+     * @param achievedPrecision (not used)
+     * @param warnings List of any warnings that may have occurred.
+     * 
+     * @return @b csm::EcefLocus Returns the sensor's unit look direction and origin (body-fixed).
+     */
     virtual csm::EcefLocus imageToRemoteImagingLocus(const csm::ImageCoord &imagePt, 
-                                                   double desiredPrecision=0.001, 
-                                                   double *achievedPrecision=NULL, 
-                                                   csm::WarningList *warnings=NULL) const;
+                                                     double desiredPrecision=0.001, 
+                                                     double *achievedPrecision=NULL, 
+                                                     csm::WarningList *warnings=NULL) const;
  
     virtual csm::ImageCoord getImageStart() const;
  
