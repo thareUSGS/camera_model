@@ -35,7 +35,8 @@ if (${USE_SYSTEM_SPICE} MATCHES "OFF")
   INCLUDE("${CMAKE_MODULE_PATH}/External-Spice.cmake")
 endif()
 FIND_PACKAGE(Spice)
-
+MESSAGE("${SPICE_BASE_PATH}")
+MESSAGE("${SPICE_INCLUDE_DIR}")
 # Find GDAL
 FIND_PACKAGE(GDAL REQUIRED)
 
@@ -47,6 +48,7 @@ ADD_SUBDIRECTORY(src)
 
 # To enable tests pass -DENABLE_TESTS=true to the cmake command
 IF (ENABLE_TESTS)
+  ENABLE_TESTING()
 	# Download and unpack googletest at configure time
 	CONFIGURE_FILE(tests/CMakeGTEST.txt.in
 	               googletest-download/CMakeLists.txt)
@@ -64,6 +66,7 @@ IF (ENABLE_TESTS)
 	# Now simply link your own targets against gtest, gmock,
 	# etc. as appropriate
 	ADD_SUBDIRECTORY(tests)
+
 ENDIF(ENABLE_TESTS)
 
 # Define the test data directory (for gtesting)
