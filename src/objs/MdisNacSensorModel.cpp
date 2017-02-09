@@ -735,11 +735,11 @@ std::pair<double, double> MdisNacSensorModel::getValidHeightRange() const {
 }
 
 csm::EcefVector MdisNacSensorModel::getIlluminationDirection(const csm::EcefCoord &groundPt) const {
-  // spacecraft (body-fixed) - sun (body-fixed) gives us the illumination direction.
+  // ground (body-fixed) - sun (body-fixed) gives us the illumination direction.
   return csm::EcefVector { 
-    m_spacecraftPosition[0] - m_sunPosition[0],
-    m_spacecraftPosition[1] - m_sunPosition[1],
-    m_spacecraftPosition[2] - m_sunPosition[2]
+    groundPt.x - m_sunPosition[0],
+    groundPt.y - m_sunPosition[1],
+    groundPt.z - m_sunPosition[2]
   };
 }
 

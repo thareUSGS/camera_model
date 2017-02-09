@@ -68,6 +68,23 @@ TEST_F(MdisNacSensorModelTest, groundToImage1) {
 }
 
 
+// Test getIlluminationDirection
+TEST_F(MdisNacSensorModelTest, getIlluminationDirection1) {
+  // gtest #247 work-around
+  if (setupFixtureFailed) {
+    FAIL() << setupFixtureError;
+  }
+  
+  // sun position based on EN1007907102M.json
+  // -31648725087.588726, -60633907522.72863, -38729485.77334732
+  csm::EcefCoord northPole { 0., 0., 2439.4 * 1000 };
+  csm::EcefVector illuminationDirection = mdisModel->getIlluminationDirection(northPole);
+  EXPECT_NEAR(31648725087.588726, illuminationDirection.x, 0.1);
+  EXPECT_NEAR(60633907522.72863, illuminationDirection.y, 0.1);
+  EXPECT_NEAR(2439.4*1000 - -38729485.77334732, illuminationDirection.z, 0.1);
+}
+
+
 // Test imageToProximateImagingLocus
 TEST_F(MdisNacSensorModelTest, imageToProximateImagingLocus1) {
   // gtest #247 work-around
