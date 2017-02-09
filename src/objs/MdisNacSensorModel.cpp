@@ -396,7 +396,7 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
   direction[0] = m[0] * undistortedFocalPlaneX + m[1] * undistortedFocalPlaneY + m[2] * m_focalLength;
   direction[1] = m[3] * undistortedFocalPlaneX + m[4] * undistortedFocalPlaneY + m[5] * m_focalLength;
   direction[2] = m[6] * undistortedFocalPlaneX + m[7] * undistortedFocalPlaneY + m[8] * m_focalLength;
-  
+    
   // Save the spacecraft position as a vector
   std::vector<double> spacecraftPosition(3);
   spacecraftPosition[0] = m_spacecraftPosition[0];
@@ -663,25 +663,42 @@ csm::EcefCoordCovar MdisNacSensorModel::imageToGround(const csm::ImageCoordCovar
 }
 
 csm::EcefLocus MdisNacSensorModel::imageToProximateImagingLocus(const csm::ImageCoord &imagePt, 
-                                            const csm::EcefCoord &groundPt, 
-                                            double desiredPrecision, 
-                                            double *achievedPrecision, 
-                                            csm::WarningList *warnings) const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::imageToProximateImagingLocus");
+                                                                const csm::EcefCoord &groundPt, 
+                                                                double desiredPrecision, 
+                                                                double *achievedPrecision, 
+                                                                csm::WarningList *warnings) const {
+  // Ignore the ground point?
+  return imageToRemoteImagingLocus(imagePt);
 }
              
              
 csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoord &imagePt, 
-                                         double desiredPrecision, 
-                                         double *achievedPrecision, 
-                                         csm::WarningList *warnings) const {
+                                                             double desiredPrecision, 
+                                                             double *achievedPrecision, 
+                                                             csm::WarningList *warnings) const {
+  // Find the line,sample on the focal plane (mm)
+  // CSM center = 0.5, MDIS IK center = 1.0
+  double col = imagePt.samp - (m_ccdCenter - 0.5);
+  double row = imagePt.line - (m_ccdCenter - 0.5);
+  double focalPlaneX = m_transX[0] + m_transX[1] * col + m_transX[2] * col;
+  double focalPlaneY = m_transY[0] + m_transY[1] * row + m_transY[2] * row;
+  
+  // Distort
+  double undistortedFocalPlaneX = focalPlaneX;
+  double undistortedFocalPlaneY = focalPlaneY;
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::imageToRemoteImagingLocus");
+  setFocalPlane(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
+  
+  // Get rotation matrix and transform to a body-fixed frame
+  std::vector<double> m = createRotationMatrix(m_omega, m_phi, m_kappa);
+  std::vector<double> lookC = { undistortedFocalPlaneX, undistortedFocalPlaneY, m_focalLength };
+  std::vector<double> lookB = rotate(lookC, m);
+  
+  // Get unit vector
+  std::vector<double> lookBUnit = normalize(lookB);
+  
+  return csm::EcefLocus(m_spacecraftPosition[0], m_spacecraftPosition[1], m_spacecraftPosition[2],
+      lookBUnit[0], lookBUnit[1], lookBUnit[2]);
 }
 
 

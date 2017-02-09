@@ -68,6 +68,55 @@ TEST_F(MdisNacSensorModelTest, groundToImage1) {
 }
 
 
+// Test imageToProximateImagingLocus
+TEST_F(MdisNacSensorModelTest, imageToProximateImagingLocus1) {
+  // gtest #247 work-around
+  if (setupFixtureFailed) {
+    FAIL() << setupFixtureError;
+  }
+  
+  csm::ImageCoord point(512.0, 512.0);
+  csm::EcefCoord ground(0,0,0);
+  csm::EcefLocus proximateLocus = mdisModel->imageToProximateImagingLocus(point, ground);
+  
+  double spacecraftX = atof(isd->param("x_sensor_origin").c_str());
+  double spacecraftY = atof(isd->param("y_sensor_origin").c_str());
+  double spacecraftZ = atof(isd->param("z_sensor_origin").c_str());
+  EXPECT_EQ(spacecraftX, proximateLocus.point.x);
+  EXPECT_EQ(spacecraftY, proximateLocus.point.y);
+  EXPECT_EQ(spacecraftZ, proximateLocus.point.z);
+  
+  EXPECT_NEAR(-0.601527, proximateLocus.direction.x, tolerance);
+  EXPECT_NEAR(0.491036, proximateLocus.direction.y, tolerance);
+  EXPECT_NEAR(-0.630118, proximateLocus.direction.z, tolerance);
+}
+
+
+// Test imageToRemoteImagingLocus
+TEST_F(MdisNacSensorModelTest, imageToRemoteImagingLocus1) {
+  // gtest #247 work-around
+  if (setupFixtureFailed) {
+    FAIL() << setupFixtureError;
+  }
+  
+  csm::ImageCoord point(512.0, 512.0);
+  csm::EcefLocus remoteLocus = mdisModel->imageToRemoteImagingLocus(point);
+  
+  // Compare the locus origin point with the body-fixed spacecraft position
+  double spacecraftX = atof(isd->param("x_sensor_origin").c_str());
+  double spacecraftY = atof(isd->param("y_sensor_origin").c_str());
+  double spacecraftZ = atof(isd->param("z_sensor_origin").c_str());
+  EXPECT_EQ(spacecraftX, remoteLocus.point.x);
+  EXPECT_EQ(spacecraftY, remoteLocus.point.y);
+  EXPECT_EQ(spacecraftZ, remoteLocus.point.z);
+  
+  // Truth values pulled from imageToGround's normalized direction vector
+  EXPECT_NEAR(-0.601527, remoteLocus.direction.x, tolerance);
+  EXPECT_NEAR(0.491036, remoteLocus.direction.y, tolerance);
+  EXPECT_NEAR(-0.630118, remoteLocus.direction.z, tolerance);
+}
+
+
 // Tests the getModelState() method with a default constructed MdisNacSensorModel.
 TEST_F(MdisNacSensorModelTest, getModelStateDefault) {
   EXPECT_EQ(defaultMdisNac.getModelState(), std::string());
