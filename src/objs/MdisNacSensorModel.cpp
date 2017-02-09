@@ -38,7 +38,9 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_line_pp = 0.0;
   m_sample_pp = 0.0;
 
-#if 0
+
+
+
   //NAC coefficients
   m_odtX[0]=0.0;
   m_odtX[1]=1.0018542696237999756;
@@ -61,7 +63,8 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_odtY[7]=1.0040104714688599425e-05;
   m_odtY[8]=0.0;
   m_odtY[9]=1.0040104714688599425e-05;
-#endif
+
+#if 0
   m_odtX[0] = 0.0;
   m_odtX[1] = 0.0;
   m_odtX[2] = 0.0;
@@ -83,7 +86,7 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_odtY[7] = 0.0;
   m_odtY[8] = 0.0;
   m_odtY[9] = 0.0;
-
+#endif
 
 }
 
@@ -102,7 +105,8 @@ MdisNacSensorModel::~MdisNacSensorModel() {}
  * @param dy distorted focal plane y in millimeters
  * @param undistortedX The undistorted x coordinate, in millimeters.
  * @param undistortedY The undistorted y coordinate, in millimeters.
- *
+ * @param epsilon  The error tolerance.  The default value of 1.4e-5 is about
+ * one-millionth of a NAC pixel
  * @return if the conversion was successful
  * @todo Review the tolerance and maximum iterations of the root-
  *       finding algorithm.
@@ -110,9 +114,9 @@ MdisNacSensorModel::~MdisNacSensorModel() {}
  *       algorithm.
  * @todo Add error handling for near-zero determinant.
 */
-bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
+bool MdisNacSensorModel::undistortedFocalCoords(double dx,double dy,
                                        double &undistortedX,
-                                       double &undistortedY ) const {
+                                       double &undistortedY,double epsilon) const {
 
 
   // Solve the distortion equation using the Newton-Raphson method.
@@ -120,7 +124,7 @@ bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
   const double tol = 1.4E-5;
 
   // The maximum number of iterations of the Newton-Raphson method.
-  const int maxTries = 60;
+  const int maxTries = 20;
 
   double x;
   double y;
@@ -159,7 +163,7 @@ bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
     y = y + (Jxx * fy - Jyx * fx) / determinant;
   }
 
-  if ( (fabs(fx) + fabs(fy)) <= tol) {
+  if ( (fabs(fx) + fabs(fy)) <= epsilon) {
     // The method converged to a root.
     undistortedX = x;
     undistortedY = y;
@@ -265,15 +269,81 @@ void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, do
 
 }
 
-csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt,
-                              double desiredPrecision,
-                              double *achievedPrecision,
-                              csm::WarningList *warnings) const {
+csm::ImageCoord MdisNacSensorModel::groundToImageIan(const csm::EcefCoord &groundPt, 
+                                                  double desiredPrecision, 
+                                                  double *achievedPrecision, 
+                                                  csm::WarningList *warnings) const {
+  // Get the rotation matrix from ISD supplied omega, phi, kappa
+  std::vector<double> rotation = createRotationMatrix(m_omega, m_phi, m_kappa);
+  
+  // Determine the center look direction (centerX, centerY, f) of the sensor in body-fixed
+  // (e.g. the sensor's optical axis rotated into body-fixed frame)
+  double centerX = 0.0;
+  double centerY = 0.0;
+  std::vector<double> sensorLookC { 0.0, 0.0, m_focalLength };
+  std::vector<double> sensorLookB = rotate(sensorLookC, rotation);
+  
+  // Find the look vector from the sensor center look to the ground point in body-fixed
+  std::vector<double> lookGroundB {
+    groundPt.x - m_spacecraftPosition[0],
+    groundPt.y - m_spacecraftPosition[1],
+    groundPt.z - m_spacecraftPosition[2],
+  };
+  
+  // Normalize by sacling the sensor-to-ground look to the sensor center look in body-fixed
+  double sensorLookBMag = sqrt( dot(sensorLookB, sensorLookB) );
+  double lookGroundBMag = sqrt( dot(lookGroundB, lookGroundB) );
+  double scale = sensorLookBMag / lookGroundBMag;
+  lookGroundB[0] = scale * lookGroundB[0]; 
+  lookGroundB[1] = scale * lookGroundB[1]; 
+  lookGroundB[2] = scale * lookGroundB[2]; 
+    
+  // Rotate the sensor-to-ground look vector from body-fixed to sensor frame (inverse rotation)
+  std::vector<double> lookGroundC = rotate(lookGroundB, rotation, true);
+    
+  // Scale the sensor-to-ground sensor frame vector so that it intersects the focal plane
+  // (i.e. scale it so its Z component equals the sensor's focal length)
+  scale = m_focalLength / lookGroundC[2];
+  double focalPlaneX = lookGroundC[0] * scale;
+  double focalPlaneY = lookGroundC[1] * scale;
+  
+  // Distortion
+  double distortedFocalPlaneX = focalPlaneX;
+  double distortedFocalPlaneY = focalPlaneY;
+  distortionFunction(focalPlaneX,focalPlaneY,distortedFocalPlaneX,distortedFocalPlaneY);
 
-double xl, yl, zl;
-xl = m_spacecraftPosition[0];
-yl = m_spacecraftPosition[1];
-zl = m_spacecraftPosition[2];
+
+  // Convert focal plane mm to pixels
+  double pixelX =  distortedFocalPlaneX * (1.0 / m_transX[1]);
+  double pixelY =  distortedFocalPlaneY * (1.0 / m_transY[2]);
+  
+  // Convert pixels to line,sample
+  double sample = pixelX + m_ccdCenter - 0.5;
+  double line = pixelY + m_ccdCenter - 0.5;
+  
+  // Check if the computed line,sample coordinate is within the image dimensions
+  bool outOfBounds = false;
+  if (sample > m_nSamples || sample < 0.0 || line > m_nLines || line < 0.0) {
+    outOfBounds = true;
+  }
+  if (outOfBounds) {
+    if (warnings != nullptr) {
+      std::string msg("The image coordinate is outside the image dimensions.");
+      std::string func("MdisNacSensorModel::imageToGround");
+      warnings->push_front(csm::Warning(csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
+                                        msg,
+                                        func));
+    }
+  }
+  
+  return csm::ImageCoord(line, sample);
+}
+       
+       
+csm::ImageCoordCovar MdisNacSensorModel::groundToImage(const csm::EcefCoordCovar &groundPt, 
+                                   double desiredPrecision, 
+                                   double *achievedPrecision, 
+                                   csm::WarningList *warnings) const {
 
 double x, y, z;
 x = groundPt.x;
@@ -290,7 +360,8 @@ f = m_focalLength;
 
 // Camera rotation matrix
 double m[3][3];
-calcRotationMatrix(m);
+calcRotationMatrix
+  //undistortedFocalCoords(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY)
 
 // Sensor position
 double line, sample, denom;
