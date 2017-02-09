@@ -35,6 +35,13 @@ MdisNacSensorModel::MdisNacSensorModel() {
   
   m_ccdCenter = 0.0;
 
+  m_startingDetectorSample = 0.0;
+  m_startingDetectorLine = 0.0;
+  m_targetName = "";
+  m_ifov = 0.0;
+  m_instrumentID = "";
+  m_focalLengthEpsilon = 0.0;
+  
 
 #if 0
   //NAC coefficients 
@@ -82,7 +89,26 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_odtY[8] = 0.0;
   m_odtY[9] = 0.0;
 
+  m_originalHalfLines = 0.0;
+  m_spacecraftName = "";
+  m_pixelPitch = 0.0; 
+    
+  m_iTransS[0] = 0.0;
+  m_iTransS[1] = 0.0;
+  m_iTransS[2] = 0.0;
+  
+  m_iTransL[0] = 0.0;
+  m_iTransL[1] = 0.0;
+  m_iTransL[2] = 0.0;
 
+  m_ephemerisTime = 0.0;
+  m_originalHalfSamples = 0.0;
+  m_boresight[0] = 0.0;
+  m_boresight[1] = 0.0;
+  m_boresight[2] = 0.0;
+
+  m_nLines = 0;
+  m_nSamples = 0;   
 }
 
 
@@ -723,9 +749,12 @@ double MdisNacSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(const csm::ImageCoord &imagePt) const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getSensorPosition");
+    csm::EcefCoord = sensorPosition;
+    EcefCoord.x = m_spacecraftPosition[0];
+    EcefCoord.y = m_spacecraftPosition[1];
+    EcefCoord.z = m_spacecraftPosition[2];
+
+    return EcefCoord;
 }
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(double time) const {
