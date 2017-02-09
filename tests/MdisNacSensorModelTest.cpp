@@ -85,6 +85,49 @@ TEST_F(MdisNacSensorModelTest, getIlluminationDirection1) {
 }
 
 
+// Test getSensorPosition(ImageCoord)
+TEST_F(MdisNacSensorModelTest, getSensorPositionCoord) {
+  // gtest #247 work-around
+  if (setupFixtureFailed) {
+    FAIL() << setupFixtureError;
+  }
+  
+  csm::EcefCoord sensorPos = mdisModel->getSensorPosition(csm::ImageCoord(512.0, 512.0));
+  EXPECT_NEAR(1728357.70312, sensorPos.x, tolerance);
+  EXPECT_NEAR(-2088409.0061, sensorPos.y, tolerance);
+  EXPECT_NEAR(2082873.92806, sensorPos.z, tolerance);
+}
+
+TEST_F(MdisNacSensorModelTest, getSensorPositionCoordOutOfBounds) {
+  // gtest #247 work-around
+  if (setupFixtureFailed) {
+    FAIL() << setupFixtureError;
+  }
+  
+  // Test all possibilites of logical condition, image size = 1024x1024
+  EXPECT_THROW({
+    // Line is negative
+    csm::EcefCoord sensorPos = mdisModel->getSensorPosition(csm::ImageCoord(-1.0, 1.0));
+  },
+  csm::Error);
+  EXPECT_THROW({
+    // Sample is negative
+    csm::EcefCoord sensorPos = mdisModel->getSensorPosition(csm::ImageCoord(1.0, -1.0));
+  },
+  csm::Error);
+  EXPECT_THROW({
+    // Line > 1024
+    csm::EcefCoord sensorPos = mdisModel->getSensorPosition(csm::ImageCoord(1100.0, 1.0));
+  },
+  csm::Error);
+  EXPECT_THROW({
+    // Sample > 1024
+    csm::EcefCoord sensorPos = mdisModel->getSensorPosition(csm::ImageCoord(1.0, 1100.0));
+  },
+  csm::Error);
+} 
+
+
 // Test imageToProximateImagingLocus
 TEST_F(MdisNacSensorModelTest, imageToProximateImagingLocus1) {
   // gtest #247 work-around

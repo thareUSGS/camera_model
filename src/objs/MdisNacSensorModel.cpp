@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 #include <csm/Error.h>
 
@@ -751,10 +752,20 @@ double MdisNacSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
 }
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(const csm::ImageCoord &imagePt) const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getSensorPosition");
+  // Make sure the passed coordinate is within the image dimensions.
+  if (imagePt.samp < 0.0 || imagePt.samp > m_nSamples || 
+      imagePt.line < 0.0 || imagePt.line > m_nLines) {
+    std::stringstream ss;
+    ss << "Image coordinate (" << imagePt.line << ", " << imagePt.samp << ") out of bounds.";
+    throw csm::Error(csm::Error::BOUNDS, ss.str(), "MdisNacSensorModel::getSensorPosition");
+  }
+  
+  // Since this is a framer, just return the sensor position the ISD gave us.
+  return csm::EcefCoord {
+      m_spacecraftPosition[0],
+      m_spacecraftPosition[1],
+      m_spacecraftPosition[2]
+  };
 }
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(double time) const {

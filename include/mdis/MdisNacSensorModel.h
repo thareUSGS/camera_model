@@ -113,6 +113,15 @@ class MdisNacSensorModel : public csm::RasterGM {
  
     virtual double getImageTime(const csm::ImageCoord &imagePt) const;
  
+    /**
+     * Determines the body-fixed sensor position for the given image coordinate.
+     * 
+     * @param imagePt Image coordinate to find the sensor position for.
+     * 
+     * @return @b csm::EcefCoord Returns the body-fixed sensor position.
+     * 
+     * @throw csm::Error::BOUNDS "Image coordinate () out of bounds."
+     */
     virtual csm::EcefCoord getSensorPosition(const csm::ImageCoord &imagePt) const;
  
     virtual csm::EcefCoord getSensorPosition(double time) const;
