@@ -34,10 +34,21 @@ class MdisNacSensorModel : public csm::RasterGM {
                                      double *achievedPrecision=NULL, 
                                      csm::WarningList *warnings=NULL) const;
 
+    virtual csm::ImageCoord groundToImage(const csm::EcefCoord &groundPt,
+                                          double desiredPrecision=0.001,
+                                          double *achievedPrecision=NULL,
+                                          csm::WarningList *warnings=NULL) const;
+
+
+
+
+
     virtual csm::ImageCoordCovar groundToImage(const csm::EcefCoordCovar &groundPt,
                                           double desiredPrecision=0.001,
                                           double *achievedPrecision=NULL,
                                           csm::WarningList *warnings=NULL) const;
+
+
 
     /**
     * This function determines if a sample, line intersects the target body and if so, where
@@ -385,7 +396,7 @@ class MdisNacSensorModel : public csm::RasterGM {
      * 
      * @return @b vector<double> Returns the rotated vector. 
      */
-    std::vector<double> rotate(const std::vector<double> &v, 
+    std::vector<double> rotate(const std::vector<double> &v,
                                const std::vector<double> &rotationMatrix,
                                bool invert = false) const;
     
