@@ -26,7 +26,7 @@ const double PI = 3.14159265358979323846;
 void cubeArray(vector<vector<float> > *cube, GDALRasterBand *poBand);
 double computeAngle(const std::vector<double> &v1, const std::vector<double> &v2);
 double emissionAngle(const csm::EcefCoord &groundPt,
-                     const csm::EcefCoord &sensorPosition);
+                     const csm::EcefVector &sensorLook);
 double incidenceAngle(const csm::EcefCoord &groundPt,
                       const csm::EcefVector &illuminationDirection);
 void writeCSV(const string &csvFile,
@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
         groundLine.push_back(groundPoint);
         
         // Calculate the emission angle using CSM's getSensorPosition
-        csm::EcefCoord sensorPosition(model->getSensorPosition(imagePoint));
-        emaLine.push_back(emissionAngle(groundPoint, sensorPosition));
+        csm::EcefLocus sensorLook(model->imageToRemoteImagingLocus(imagePoint));
+        emaLine.push_back(emissionAngle(groundPoint, sensorLook.direction));
         
         // Calculate the incidence angle using CSM's illumination vector.
         csm::EcefVector illumination(model->getIlluminationDirection(groundPoint));
@@ -254,19 +254,25 @@ double computeAngle(const std::vector<double> &v1, const std::vector<double> &v2
 
 
 /**
- * Calculates the emission angle (degrees) between a ground point's normal and the spacecraft's
- * position (body-fixed).
+ * Calculates the emission angle (degrees) between a ground point's normal and the sensor's look
+ * direction.
  * 
  * @param groundPt Body-fixed ground point to use in calculation.
- * @param spacecraftPosition Body-fixed spacecraft position.
+ * @param sensorLook Body-fixed sensor look direction.
  * 
  * @return @b double Returns the emission angle (in degrees) between ground point normal and the
  *                   spacecraft position.
  */
 double emissionAngle(const csm::EcefCoord &groundPt,
-                     const csm::EcefCoord &sensorPosition) {
+                     const csm::EcefVector &sensorLook) {
+  // Reverse the sensor look direction to get vector from ground to sensor.
+  std::vector<double> sensor { 
+    -1 * sensorLook.x,
+    -1 * sensorLook.y,
+    -1 * sensorLook.z 
+  };
+  
   std::vector<double> ground { groundPt.x, groundPt.y, groundPt.z };
-  std::vector<double> sensor { sensorPosition.x, sensorPosition.y, sensorPosition.z };
   return computeAngle(ground, sensor);
 }
 
@@ -283,14 +289,14 @@ double emissionAngle(const csm::EcefCoord &groundPt,
  */
 double incidenceAngle(const csm::EcefCoord &groundPt,
                       const csm::EcefVector &illuminationDirection) {
-  // First find the body-fixed position of the sun.
+  // Reverse the illumination to get vector from ground point to sun.
   std::vector<double> sun {
-    groundPt.x - illuminationDirection.x,
-    groundPt.y - illuminationDirection.y,
-    groundPt.z - illuminationDirection.z
+    -1 * illuminationDirection.x,
+    -1 * illuminationDirection.y,
+    -1 * illuminationDirection.z
   };
   
-  // Solve for the angle between the sun position and the ground position.
+  // Solve for the angle between the vector from surface to sun and the ground position.
   std::vector<double> ground { groundPt.x, groundPt.y, groundPt.z };
   return computeAngle(ground, sun);
 }
