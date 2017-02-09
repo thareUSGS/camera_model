@@ -691,7 +691,7 @@ csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoo
   double undistortedFocalPlaneX = focalPlaneX;
   double undistortedFocalPlaneY = focalPlaneY;
 
-  setFocalPlane(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
+  undistortedFocalCoords(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
   
   // Get rotation matrix and transform to a body-fixed frame
   std::vector<double> m = createRotationMatrix(m_omega, m_phi, m_kappa);
