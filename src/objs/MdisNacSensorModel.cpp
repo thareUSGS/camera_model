@@ -742,9 +742,7 @@ csm::EcefVector MdisNacSensorModel::getIlluminationDirection(const csm::EcefCoor
 
 double MdisNacSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getImageTime");
+    return m_ephemerisTime;
 }
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(const csm::ImageCoord &imagePt) const {
