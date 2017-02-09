@@ -33,6 +33,10 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_spacecraftPosition[1] = 0.0;
   m_spacecraftPosition[2] = 0.0;
   
+  m_sunPosition[0] = 0.0;
+  m_sunPosition[1] = 0.0;
+  m_sunPosition[2] = 0.0;
+  
   m_ccdCenter = 0.0;
 
 
@@ -725,10 +729,12 @@ std::pair<double, double> MdisNacSensorModel::getValidHeightRange() const {
 }
 
 csm::EcefVector MdisNacSensorModel::getIlluminationDirection(const csm::EcefCoord &groundPt) const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getIlluminationDirection");
+  // spacecraft (body-fixed) - sun (body-fixed) gives us the illumination direction.
+  return csm::EcefVector { 
+    m_spacecraftPosition[0] - m_sunPosition[0],
+    m_spacecraftPosition[1] - m_sunPosition[1],
+    m_spacecraftPosition[2] - m_sunPosition[2]
+  };
 }
 
 double MdisNacSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {

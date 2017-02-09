@@ -100,7 +100,15 @@ class MdisNacSensorModel : public csm::RasterGM {
     virtual std::pair<csm::ImageCoord, csm::ImageCoord> getValidImageRange() const;
   
     virtual std::pair<double, double> getValidHeightRange() const;
- 
+
+    /**
+     * Calculates the illumination vector (body-fixed, meters) from the sun to the given ground
+     * point.
+     * 
+     * @param groundPt The ground point to find the illumination vector to.
+     * 
+     * @return @b csm::EcefVector Returns the illumination vector from the sun to the ground point.
+     */
     virtual csm::EcefVector getIlluminationDirection(const csm::EcefCoord &groundPt) const;
  
     virtual double getImageTime(const csm::ImageCoord &imagePt) const;
@@ -397,6 +405,7 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_kappa;
     double m_focalLength;
     double m_spacecraftPosition[3];
+    double m_sunPosition[3];
     double m_ccdCenter;
     double m_startingDetectorSample;
     double m_startingDetectorLine;
@@ -415,7 +424,7 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_originalHalfSamples;
     double m_boresight[3];
     int m_nLines;
-    int m_nSamples;    
+    int m_nSamples;
 };
 
 #endif

@@ -141,6 +141,14 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
     missingKeywords.push_back("z_sensor_origin");
   }
   
+  sensorModel->m_sunPosition[0] =
+      atof(imageSupportData.param("x_sun_position").c_str());
+  sensorModel->m_sunPosition[1] =
+      atof(imageSupportData.param("y_sun_position").c_str());
+  sensorModel->m_sunPosition[2] =
+      atof(imageSupportData.param("z_sun_position").c_str());
+  // sun position is not strictly necessary, but is required for getIlluminationDirection.
+  
   sensorModel->m_omega = atof(imageSupportData.param("omega").c_str());
   sensorModel->m_phi = atof(imageSupportData.param("phi").c_str());
   sensorModel->m_kappa = atof(imageSupportData.param("kappa").c_str());
