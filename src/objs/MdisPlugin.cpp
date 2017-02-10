@@ -163,6 +163,7 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   sensorModel->m_odtX[6] = atof(imageSupportData.param("odt_x", 6).c_str());
   sensorModel->m_odtX[7] = atof(imageSupportData.param("odt_x", 7).c_str());
   sensorModel->m_odtX[8] = atof(imageSupportData.param("odt_x", 8).c_str());
+  sensorModel->m_odtX[9] = atof(imageSupportData.param("odt_x", 9).c_str());
 
   sensorModel->m_odtY[0] = atof(imageSupportData.param("odt_y", 0).c_str());
   sensorModel->m_odtY[1] = atof(imageSupportData.param("odt_y", 1).c_str());
@@ -173,10 +174,12 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   sensorModel->m_odtY[6] = atof(imageSupportData.param("odt_y", 6).c_str());
   sensorModel->m_odtY[7] = atof(imageSupportData.param("odt_y", 7).c_str());
   sensorModel->m_odtY[8] = atof(imageSupportData.param("odt_y", 8).c_str());
+  sensorModel->m_odtY[9] = atof(imageSupportData.param("odt_y", 9).c_str());
+
 
   sensorModel->m_ccdCenter[0] = atof(imageSupportData.param("ccd_center", 0).c_str());
   sensorModel->m_ccdCenter[1] = atof(imageSupportData.param("ccd_center", 1).c_str());
-  
+
   sensorModel->m_originalHalfLines = atof(imageSupportData.param("original_half_lines").c_str());
   sensorModel->m_spacecraftName = imageSupportData.param("spacecraft_name");
 

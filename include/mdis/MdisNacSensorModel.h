@@ -282,8 +282,8 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_ifov;
     std::string m_instrumentID;
     double m_focalLengthEpsilon;
-    double m_odtX[9];
-    double m_odtY[9];
+    double m_odtX[10];
+    double m_odtY[10];
     double m_originalHalfLines;
     std::string m_spacecraftName;
     double m_pixelPitch;

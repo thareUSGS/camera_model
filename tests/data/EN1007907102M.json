@@ -1,1 +1,77 @@
-{"x_sensor_origin": 1728357.7031238307, "nsamples": 1024, "focal_length": 549.1178195372703, "target_name": "Mercury", "pixel_pitch": 0.014, "instrument_id": "MDIS-NAC", "z_sensor_origin": 2082873.9280557402, "ephemeris_time": 418855170.49264956, "spacecraft_name": "Messenger", "starting_detector_sample": 9.0, "semi_minor_axis": 2439.4, "original_half_lines": 512.0, "y_sensor_origin": -2088409.0061042644, "transx": [0.0, 0.014, 0.0], "odt_y": [0.0, 0.0, 1.0, 0.0009060010594996751, 0.0, 0.0003574842626620758, 0.0, 1.004010471468856e-05, 0.0], "orginal_half_samples": 512.0, "focal_length_epsilon": 0.5, "transy": [0.0, 0.0, 0.014], "omega": 2.256130940792258, "phi": 0.09433201631102328, "itrans_sample": [0.0, 71.42857143, 0.0], "itrans_line": [0.0, 0.0, 71.42857143], "semi_major_axis": 2439.4, "odt_x": [0.0, 1.001854269623802, 0.0, 0.0, -0.0005094440474941111, 0.0, 1.004010471468856e-05, 0.0, 1.004010471468856e-05], "boresight": [0.0, 0.0, 1.0], "nlines": 1024, "ccd_center": [512.5, 512.5], "starting_detector_line": 1.0, "ifov": 25.44, "kappa": -0.9630375478615623}
+{
+    "boresight": [
+        0.0,
+        0.0,
+        1.0
+    ],
+    "ccd_center": [
+        512.5,
+        512.5
+    ],
+    "ephemeris_time": 418855170.49264956,
+    "focal_length": 549.2347965210602,
+    "focal_length_epsilon": 0.5,
+    "ifov": 25.44,
+    "instrument_id": "MDIS-NAC",
+    "itrans_line": [
+        0.0,
+        0.0,
+        71.42857143
+    ],
+    "itrans_sample": [
+        0.0,
+        71.42857143,
+        0.0
+    ],
+    "kappa": -0.963008015000929,
+    "nlines": 1024,
+    "nsamples": 1024,
+    "odt_x": [
+        0.0,
+        1.001854269623802,
+        0.0,
+        0.0,
+        -0.0005094440474941111,
+        0.0,
+        1.004010471468856e-05,
+        0.0,
+        1.004010471468856e-05,
+        0.0
+    ],
+    "odt_y": [
+        0.0,
+        0.0,
+        1.0,
+        0.0009060010594996751,
+        0.0,
+        0.0003574842626620758,
+        0.0,
+        1.004010471468856e-05,
+        0.0,
+        1.004010471468856e-05
+    ],
+    "omega": 2.25613869898165,
+    "original_half_lines": 512.0,
+    "original_half_samples": 512.0,
+    "phi": 0.09434616179037647,
+    "pixel_pitch": 0.014,
+    "semi_major_axis": 2439.4,
+    "semi_minor_axis": 2439.4,
+    "spacecraft_name": "Messenger",
+    "starting_detector_line": 1.0,
+    "starting_detector_sample": 9.0,
+    "target_name": "Mercury",
+    "transx": [
+        0.0,
+        0.014,
+        0.0
+    ],
+    "transy": [
+        0.0,
+        0.0,
+        0.014
+    ],
+    "x_sensor_origin": 1728180,
+    "y_sensor_origin": -2088200,
+    "z_sensor_origin": 2082710
+}

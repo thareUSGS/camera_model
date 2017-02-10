@@ -47,30 +47,6 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_line_pp = 0.0;
   m_sample_pp = 0.0;
 
-#if 0
-  //NAC coefficients
-  m_odtX[0]=0.0;
-  m_odtX[1]=1.0018542696237999756;
-  m_odtX[2]=-0.0;
-  m_odtX[3]=-0.0;
-  m_odtX[4]=-0.00050944404749411103042;
-  m_odtX[5]=0.0;
-  m_odtX[6]=1.0040104714688599425e-05;
-  m_odtX[7]=0.0;
-  m_odtX[8]=1.0040104714688599425e-05;
-  m_odtX[9]=0.0;
-
-  m_odtY[0]=0.0;
-  m_odtY[1]=0.0;
-  m_odtY[2]=1.0;
-  m_odtY[3]=0.00090600105949967496381;
-  m_odtY[4]=0.0;
-  m_odtY[5]=0.00035748426266207598964;
-  m_odtY[6]=0.0;
-  m_odtY[7]=1.0040104714688599425e-05;
-  m_odtY[8]=0.0;
-  m_odtY[9]=1.0040104714688599425e-05;
-#endif
   m_odtX[0] = 0.0;
   m_odtX[1] = 0.0;
   m_odtX[2] = 0.0;
@@ -92,8 +68,6 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_odtY[7] = 0.0;
   m_odtY[8] = 0.0;
   m_odtY[9] = 0.0;
-
-
 }
 
 
@@ -114,8 +88,6 @@ x = groundPt.x;
 y = groundPt.y;
 z = groundPt.z;
 
-std::cout << "X: " << x << ", Y: " << y << ", Z: " << z << std::endl;
-
 double xo, yo, zo;
 xo = xl - x;
 yo = yl - y;
@@ -131,25 +103,19 @@ calcRotationMatrix(m);
 // Sensor position
 double undistortedx, undistortedy, denom;
 denom = m[0][2] * xo + m[1][2] * yo + m[2][2] * zo;
-undistortedx = (-f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_sample_pp;
+undistortedx = (-f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_sample_pp;  //m_sample_pp like this assumes mm
 undistortedy = (-f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_line_pp;
-std::cout << "Undistorted (x,y): " <<  undistortedx << "," << undistortedy << std::endl;
-
 
 // Apply the distortion to the line/sample location and then convert back to line/sample
 double distortedx, distortedy;
 setFocalPlane(undistortedx, undistortedy, distortedx, distortedy);
-std::cout << "Distorted (x,y): " << distortedx << "," << distortedy << std::endl;
 
 //Convert distorted mm into line/sample
 double sample, line;
 sample = distortedx / m_transX[1] + m_ccdCenter[0];
 line = distortedy / m_transY[2] + m_ccdCenter[1];
-std::cout << m_transX[1] << "," << m_transY[2] << std::endl;
-std::cout << sample << "," << line << std::endl;
 
 return csm::ImageCoord(line, sample);
-
 }
 
 

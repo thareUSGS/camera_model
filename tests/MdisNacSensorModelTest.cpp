@@ -23,28 +23,39 @@ MdisNacSensorModel *MdisNacSensorModelTest::mdisModel = nullptr;
  * qview /work/projects/IAA_camera/data/EN100790102M.cub
  * F (selects "Find Tool")
  * On top toolbar, select "Find Point"
- * Type in 512.5, 512.5 for Sample/Line (ISIS3 pixel center = 1,1)
+ * Type in 513, 513 for Sample/Line (ISIS3 pixel center = 1,1)
  * Click "Record Point"
  * Check "XYZ" -> { 1132.18, -1597.75, 1455.66 }
  */
-TEST_F(MdisNacSensorModelTest, imageToGround1) {
+TEST_F(MdisNacSensorModelTest, imageToGroundCenter) {
 
   // gtest #247 work-around
   if (setupFixtureFailed) {
     FAIL() << setupFixtureError;
   }
 
-  // CSM Line/Sample center = 512, 512
   csm::ImageCoord point(512.5, 512.5);
   double height = 0.0;
   csm::EcefCoord xyz = mdisModel->imageToGround(point, height);
-  double truth[] = { 1132.18*1000, -1597.75*1000, 1455.66*1000 };
+  double truth[] = { 1129.25*1000, -1599.26*1000, 1455.28*1000 };
   EXPECT_EQ(truth[0], xyz.x);
   EXPECT_EQ(truth[1], xyz.y);
   EXPECT_EQ(truth[2], xyz.z);
 }
 
+TEST_F(MdisNacSensorModelTest, imageToGroundOffCenter){
+  if (setupFixtureFailed) {
+    FAIL() << setupFixtureError;
+  }
 
+  csm::ImageCoord point(100, 100);
+  double height = 0.0;
+  csm::EcefCoord xyz = mdisModel->imageToGround(point, height);
+  double truth[] = { 1115.95*1000, -1603.44*1000, 1460.93*1000 };
+  EXPECT_EQ(truth[0], xyz.x);
+  EXPECT_EQ(truth[1], xyz.y);
+  EXPECT_EQ(truth[2], xyz.z);
+}
 // Test groundToImage
 TEST_F(MdisNacSensorModelTest, groundToImage1) {
   // gtest #247 work-around
@@ -52,14 +63,9 @@ TEST_F(MdisNacSensorModelTest, groundToImage1) {
     FAIL() << setupFixtureError;
   }
 
-  double x = 1129210.0;
-  double y = -1599310.0;
-  double z = 1455250.0;
-  // Override xyz - distortion has some issues, so we will use undistorted xyz for
-  // input line,sample 100,100. See python vector ground to image notebook for details.
-  //x = 1115920.0;
-  //y = -1603550.0;
-  //z = 1460830.0;
+  double x = 1129.25 * 1000;
+  double y = -1599.26 * 1000;
+  double z = 1455.28 * 1000;
   csm::EcefCoord xyz(x, y, z);
   csm::ImageCoord pt = mdisModel->groundToImage(xyz);
   // Use 1/2 pixel as tolerance
