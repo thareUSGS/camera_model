@@ -125,7 +125,16 @@ class MdisNacSensorModel : public csm::RasterGM {
     virtual csm::EcefCoord getSensorPosition(const csm::ImageCoord &imagePt) const;
  
     virtual csm::EcefCoord getSensorPosition(double time) const;
- 
+
+    /**
+     * Determines the velocity of the sensor for the given image coordinate (in body-fixed frame).
+     * 
+     * @param imagePt Image coordinate to find the sensor position for.
+     * 
+     * @return @b csm::EcefVector Returns the sensor velocity in body-fixed frame.
+     * 
+     * @throw csm::Error::BOUNDS "Image coordinate () out of bounds."
+     */
     virtual csm::EcefVector getSensorVelocity(const csm::ImageCoord &imagePt) const;
  
     virtual csm::EcefVector getSensorVelocity(double time) const;
@@ -415,6 +424,7 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_kappa;
     double m_focalLength;
     double m_spacecraftPosition[3];
+    double m_spacecraftVelocity[3];
     double m_sunPosition[3];
     double m_ccdCenter;
     double m_startingDetectorSample;
@@ -434,7 +444,7 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_originalHalfSamples;
     double m_boresight[3];
     int m_nLines;
-    int m_nSamples;    
+    int m_nSamples;
 };
 
 #endif

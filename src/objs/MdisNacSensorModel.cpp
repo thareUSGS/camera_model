@@ -33,6 +33,9 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_spacecraftPosition[0] = 0.0;
   m_spacecraftPosition[1] = 0.0;
   m_spacecraftPosition[2] = 0.0;
+  m_spacecraftVelocity[0] = 0.0;
+  m_spacecraftVelocity[1] = 0.0;
+  m_spacecraftVelocity[2] = 0.0;
   
   m_sunPosition[0] = 0.0;
   m_sunPosition[1] = 0.0;
@@ -776,10 +779,20 @@ csm::EcefCoord MdisNacSensorModel::getSensorPosition(double time) const {
 }
 
 csm::EcefVector MdisNacSensorModel::getSensorVelocity(const csm::ImageCoord &imagePt) const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getSensorVelocity");
+  // Make sure the passed coordinate is with the image dimensions.
+  if (imagePt.samp < 0.0 || imagePt.samp > m_nSamples ||
+      imagePt.line < 0.0 || imagePt.line > m_nLines) {
+    std::stringstream ss;
+    ss << "Image coordinate (" << imagePt.line << ", " << imagePt.samp << ") out of bounds.";
+    throw csm::Error(csm::Error::BOUNDS, ss.str(), "MdisNacSensorModel::getSensorVelocity");
+  }
+  
+  // Since this is a frame, just return the sensor velocity the ISD gave us.
+  return csm::EcefVector {
+    m_spacecraftVelocity[0],
+    m_spacecraftVelocity[1],
+    m_spacecraftVelocity[2]
+  };
 }
 
 csm::EcefVector MdisNacSensorModel::getSensorVelocity(double time) const {

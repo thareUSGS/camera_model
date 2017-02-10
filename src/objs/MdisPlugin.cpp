@@ -141,6 +141,14 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
     missingKeywords.push_back("z_sensor_origin");
   }
   
+  sensorModel->m_spacecraftVelocity[0] =
+      atof(imageSupportData.param("x_sensor_velocity").c_str());
+  sensorModel->m_spacecraftVelocity[1] =
+      atof(imageSupportData.param("y_sensor_velocity").c_str());
+  sensorModel->m_spacecraftVelocity[2] =
+      atof(imageSupportData.param("z_sensor_velocity").c_str());
+  // sensor velocity not strictly necessary?
+  
   sensorModel->m_sunPosition[0] =
       atof(imageSupportData.param("x_sun_position").c_str());
   sensorModel->m_sunPosition[1] =

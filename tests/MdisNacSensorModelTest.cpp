@@ -125,7 +125,21 @@ TEST_F(MdisNacSensorModelTest, getSensorPositionCoordOutOfBounds) {
     csm::EcefCoord sensorPos = mdisModel->getSensorPosition(csm::ImageCoord(1.0, 1100.0));
   },
   csm::Error);
-} 
+}
+
+
+// Test getSensorVelocity(ImageCoord)
+TEST_F(MdisNacSensorModelTest, getSensorVelocityCoord) {
+  // gtest #247 work-around
+  if (setupFixtureFailed) {
+    FAIL() << setupFixtureError;
+  }
+  
+  csm::EcefVector sensorVelocity = mdisModel->getSensorVelocity(csm::ImageCoord(512.0, 512.0));
+  EXPECT_NEAR(1998.29, sensorVelocity.x, 0.01);
+  EXPECT_NEAR(-1800.9, sensorVelocity.y, 0.01);
+  EXPECT_NEAR(-1674.76, sensorVelocity.z, 0.01);
+}
 
 
 // Test imageToProximateImagingLocus
