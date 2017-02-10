@@ -108,7 +108,7 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_boresight[2] = 0.0;
 
   m_nLines = 0;
-  m_nSamples = 0;   
+  m_nSamples = 0;
 }
 
 
@@ -707,9 +707,10 @@ csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoo
 
 csm::ImageCoord MdisNacSensorModel::getImageStart() const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getImageStart");
+    csm::ImageCoord start;
+    start.samp = m_startingDetectorSample;
+    start.line = m_startingDetectorLine;
+    return start;
 }
 
 csm::ImageVector MdisNacSensorModel::getImageSize() const {
@@ -741,18 +742,40 @@ csm::EcefVector MdisNacSensorModel::getIlluminationDirection(const csm::EcefCoor
 }
 
 double MdisNacSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
-
+  
+  // check if the image point is in range
+  if (imagePt.samp >= m_startingDetectorSample && 
+      imagePt.samp <= (m_startingDetectorSample + m_nSamples) &&
+      imagePt.line >= m_startingDetectorSample &&
+      imagePt.line <= (m_startingDetectorLine + m_nLines)) {
     return m_ephemerisTime;
+  }
+  else {
+    throw csm::Error(csm::Error::BOUNDS,
+                     "Image Coordinate out of Bounds",
+                     "MdisNacSensorModel::getImageTime");
+  }
 }
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(const csm::ImageCoord &imagePt) const {
+  
+  // check if the image point is in range
+  if (imagePt.samp >= m_startingDetectorSample && 
+      imagePt.samp <= (m_startingDetectorSample + m_nSamples) &&
+      imagePt.line >= m_startingDetectorSample &&
+      imagePt.line <= (m_startingDetectorLine + m_nLines)) {
+    csm::EcefCoord sensorPosition;
+    sensorPosition.x = m_spacecraftPosition[0];
+    sensorPosition.y = m_spacecraftPosition[1];
+    sensorPosition.z = m_spacecraftPosition[2];
 
-    csm::EcefCoord = sensorPosition;
-    EcefCoord.x = m_spacecraftPosition[0];
-    EcefCoord.y = m_spacecraftPosition[1];
-    EcefCoord.z = m_spacecraftPosition[2];
-
-    return EcefCoord;
+    return sensorPosition;
+  }
+  else {
+    throw csm::Error(csm::Error::BOUNDS,
+                     "Image Coordinate out of Bounds",
+                     "MdisNacSensorModel::getSensorPosition");
+  }
 }
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(double time) const {
