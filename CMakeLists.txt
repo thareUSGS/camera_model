@@ -25,9 +25,8 @@ INCLUDE(ExternalProject)
 OPTION (USE_SYSTEM_EIGEN "Use system libraries for Eigen" OFF)
 if (${USE_SYSTEM_EIGEN} MATCHES "OFF")
 	include("${CMAKE_MODULE_PATH}/External-Eigen.cmake")
-else()
-	FIND_PACKAGE(Eigen3 REQUIRED 3.4)
 endif()
+FIND_PACKAGE(Eigen3 REQUIRED 3.4)
 
 # Find Spice
 OPTION (USE_SYSTEM_SPICE "Use system libraries for the NAIFSpice Toolkit" OFF)

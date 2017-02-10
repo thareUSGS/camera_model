@@ -22,6 +22,14 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_transY[1] = 0.0;
   m_transY[2] = 0.0;
 
+  m_iTransS[0] = 0.0;
+  m_iTransS[1] = 0.0;
+  m_iTransS[2] = 0.0;
+
+  m_iTransL[0] = 0.0;
+  m_iTransL[0] = 0.0;
+  m_iTransL[0] = 0.0;
+
   m_majorAxis = 0.0;
   m_minorAxis = 0.0;
   m_omega = 0.0;
@@ -33,7 +41,8 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_spacecraftPosition[1] = 0.0;
   m_spacecraftPosition[2] = 0.0;
 
-  m_ccdCenter = 0.0;
+  m_ccdCenter[0] = 0.0;
+  m_ccdCenter[1] = 0.0;
 
   m_line_pp = 0.0;
   m_sample_pp = 0.0;
@@ -90,181 +99,6 @@ MdisNacSensorModel::MdisNacSensorModel() {
 
 MdisNacSensorModel::~MdisNacSensorModel() {}
 
-
-/**
- * @brief Compute undistorted focal plane x/y.
- *
- * Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
- * coordinate. The undistorted coordinates are solved for using the Newton-Raphson
- * method for root-finding if the distortionFunction method is invoked.
- *
- * @param dx distorted focal plane x in millimeters
- * @param dy distorted focal plane y in millimeters
- * @param undistortedX The undistorted x coordinate, in millimeters.
- * @param undistortedY The undistorted y coordinate, in millimeters.
- *
- * @return if the conversion was successful
- * @todo Review the tolerance and maximum iterations of the root-
- *       finding algorithm.
- * @todo Review the handling of non-convergence of the root-finding
- *       algorithm.
- * @todo Add error handling for near-zero determinant.
-*/
-bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
-                                       double &undistortedX,
-                                       double &undistortedY ) const {
-
-
-  // Solve the distortion equation using the Newton-Raphson method.
-  // Set the error tolerance to about one millionth of a NAC pixel.
-  const double tol = 1.4E-5;
-
-  // The maximum number of iterations of the Newton-Raphson method.
-  const int maxTries = 60;
-
-  double x;
-  double y;
-  double fx;
-  double fy;
-  double Jxx;
-  double Jxy;
-  double Jyx;
-  double Jyy;
-
-  // Initial guess at the root
-  x = dx;
-  y = dy;
-
-  distortionFunction(x, y, fx, fy);
-
-  for (int count = 1; ((fabs(fx) + fabs(fy)) > tol) && (count < maxTries); count++) {
-
-    this->distortionFunction(x, y, fx, fy);
-
-    fx = dx - fx;
-    fy = dy - fy;
-
-    distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
-
-    double determinant = Jxx * Jyy - Jxy * Jyx;
-    if (determinant < 1E-6) {
-      //
-      // Near-zero determinant. Add error handling here.
-      //
-      //-- Just break out and return with no convergence
-      break;
-    }
-
-    x = x + (Jyy * fx - Jxy * fy) / determinant;
-    y = y + (Jxx * fy - Jyx * fx) / determinant;
-  }
-
-  if ( (fabs(fx) + fabs(fy)) <= tol) {
-    // The method converged to a root.
-    undistortedX = x;
-    undistortedY = y;
-
-  }
-  else {
-    // The method did not converge to a root within the maximum
-    // number of iterations. Return with no distortion.
-    undistortedX = dx;
-    undistortedY = dy;
-  }
-
-  return true;
-
-}
-
-
-/**
- * @description Jacobian of the distortion function. The Jacobian was computed
- * algebraically from the function described in the distortionFunction
- * method.
- *
- * @param x
- * @param y
- * @param Jxx  Partial_xx
- * @param Jxy  Partial_xy
- * @param Jyx  Partial_yx
- * @param Jyy  Partial_yy
- */
-void MdisNacSensorModel::distortionJacobian(double x, double y, double &Jxx, double &Jxy,
-                                            double &Jyx, double &Jyy) const {
-
-  double d_dx[10];
-  d_dx[0] = 0;
-  d_dx[1] = 1;
-  d_dx[2] = 0;
-  d_dx[3] = 2 * x;
-  d_dx[4] = y;
-  d_dx[5] = 0;
-  d_dx[6] = 3 * x * x;
-  d_dx[7] = 2 * x * y;
-  d_dx[8] = y * y;
-  d_dx[9] = 0;
-  double d_dy[10];
-  d_dy[0] = 0;
-  d_dy[1] = 0;
-  d_dy[2] = 1;
-  d_dy[3] = 0;
-  d_dy[4] = x;
-  d_dy[5] = 2 * y;
-  d_dy[6] = 0;
-  d_dy[7] = x * x;
-  d_dy[8] = 2 * x * y;
-  d_dy[9] = 3 * y * y;
-
-  Jxx = 0.0;
-  Jxy = 0.0;
-  Jyx = 0.0;
-  Jyy = 0.0;
-
-  for (int i = 0; i < 10; i++) {
-    Jxx = Jxx + d_dx[i] * m_odtX[i];
-    Jxy = Jxy + d_dy[i] * m_odtX[i];
-    Jyx = Jyx + d_dx[i] * m_odtY[i];
-    Jyy = Jyy + d_dy[i] * m_odtY[i];
-  }
-
-
-}
-
-
-/**
- * @description Compute distorted focal plane (dx,dy) coordinate  given an undistorted focal
- * plane (ux,uy) coordinate. This describes the third order Taylor approximation to the
- * distortion model.
- *
- * @param ux Undistored x
- * @param uy Undistored y
- * @param dx Result distorted x
- * @param dy Result distorted y
- */
-void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, double &dy) const {
-
-  double f[10];
-  f[0] = 1;
-  f[1] = ux;
-  f[2] = uy;
-  f[3] = ux * ux;
-  f[4] = ux * uy;
-  f[5] = uy * uy;
-  f[6] = ux * ux * ux;
-  f[7] = ux * ux * uy;
-  f[8] = ux * uy * uy;
-  f[9] = uy * uy * uy;
-
-  dx = 0.0;
-  dy = 0.0;
-
-  for (int i = 0; i < 10; i++) {
-    dx = dx + f[i] * m_odtX[i];
-    dy = dy + f[i] * m_odtY[i];
-  }
-
-}
-
 csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt,
                               double desiredPrecision,
                               double *achievedPrecision,
@@ -280,6 +114,8 @@ x = groundPt.x;
 y = groundPt.y;
 z = groundPt.z;
 
+std::cout << "X: " << x << ", Y: " << y << ", Z: " << z << std::endl;
+
 double xo, yo, zo;
 xo = xl - x;
 yo = yl - y;
@@ -293,13 +129,24 @@ double m[3][3];
 calcRotationMatrix(m);
 
 // Sensor position
-double line, sample, denom;
-
+double undistortedx, undistortedy, denom;
 denom = m[0][2] * xo + m[1][2] * yo + m[2][2] * zo;
-sample = (-f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_sample_pp;
-line = (-f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_line_pp;
+undistortedx = (-f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_sample_pp;
+undistortedy = (-f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_line_pp;
+std::cout << "Undistorted (x,y): " <<  undistortedx << "," << undistortedy << std::endl;
+
 
 // Apply the distortion to the line/sample location and then convert back to line/sample
+double distortedx, distortedy;
+setFocalPlane(undistortedx, undistortedy, distortedx, distortedy);
+std::cout << "Distorted (x,y): " << distortedx << "," << distortedy << std::endl;
+
+//Convert distorted mm into line/sample
+double sample, line;
+sample = distortedx / m_transX[1] + m_ccdCenter[0];
+line = distortedy / m_transY[2] + m_ccdCenter[1];
+std::cout << m_transX[1] << "," << m_transY[2] << std::endl;
+std::cout << sample << "," << line << std::endl;
 
 return csm::ImageCoord(line, sample);
 
@@ -323,35 +170,44 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
                                                  double *achievedPrecision,
                                                  csm::WarningList *warnings) const {
 
-  // I do not see this shift in other CSM and adding it results in less accurate results.
   double sample = imagePt.samp;
   double line = imagePt.line;
-  sample -= m_ccdCenter - 0.5; // ISD needs a center sample in CSM coord
-  line -= m_ccdCenter - 0.5; // ISD needs a center line in CSM coord (.5 .5 pixel centers)
 
   //Here is where we should be able to apply an adjustment to opk
   double m[3][3];
   calcRotationMatrix(m);
 
-  // Collinearity not solving for scale
+  //Apply the principal point offset, assuming the pp is given in pixels
   double xl, yl, zl, lo, so;
   lo = line - m_line_pp;
-  so - line - m_sample_pp;
+  so = sample - m_sample_pp;
 
+  //Convert from the pixel space into the metric space
+  double optical_center_x, optical_center_y, x_camera, y_camera;
+  optical_center_x = m_ccdCenter[0];
+  optical_center_y = m_ccdCenter[1]; //This should be a vector from the ISD
+  y_camera = (lo - optical_center_y) / m_iTransL[2];
+  x_camera = (so - optical_center_x) / m_iTransS[1];
 
-  // Apply the distortion model
-  double dlo, dso;
-  distortionFunction(lo, so, dlo, dso);
+  // Apply the distasdortion model
+  double distorted_cameraX, distorted_cameraY;
+  distortionFunction(y_camera, x_camera, distorted_cameraY, distorted_cameraX);
 
-  xl = m[0][0] * dso + m[0][1] * dlo - m[0][2] * -m_focalLength;
-  yl = m[1][0] * dso + m[1][1] * dlo - m[1][2] * -m_focalLength;
-  zl = m[2][0] * dso + m[2][1] * dlo - m[2][2] * -m_focalLength;
+  //Now back from distorted mm to pixels
+  double dx, dy; //distorted line and sample
+  dx = distorted_cameraX;
+  dy = distorted_cameraY;
+
+  xl = m[0][0] * dx + m[0][1] * dy - m[0][2] * -m_focalLength;
+  yl = m[1][0] * dx + m[1][1] * dy - m[1][2] * -m_focalLength;
+  zl = m[2][0] * dx + m[2][1] * dy - m[2][2] * -m_focalLength;
 
   double x, y, z;
   double xc, yc, zc;
   xc = m_spacecraftPosition[0];
   yc = m_spacecraftPosition[1];
   zc = m_spacecraftPosition[2];
+
   // Intersect with some height about the ellipsoid.
   losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z);
 
@@ -814,10 +670,182 @@ void MdisNacSensorModel::losEllipsoidIntersect(
    }
    double scale;
    scale = (-bt - sqrt (quadTerm)) / (2.0 * at);
-
    // Compute ground point vector
 
    x = xc + scale * xl;
    y = yc + scale * yl;
    z = zc + scale * zl;
+}
+/**
+ * @brief Compute undistorted focal plane x/y.
+ *
+ * Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
+ * coordinate. The undistorted coordinates are solved for using the Newton-Raphson
+ * method for root-finding if the distortionFunction method is invoked.
+ *
+ * @param dx distorted focal plane x in millimeters
+ * @param dy distorted focal plane y in millimeters
+ * @param undistortedX The undistorted x coordinate, in millimeters.
+ * @param undistortedY The undistorted y coordinate, in millimeters.
+ *
+ * @return if the conversion was successful
+ * @todo Review the tolerance and maximum iterations of the root-
+ *       finding algorithm.
+ * @todo Review the handling of non-convergence of the root-finding
+ *       algorithm.
+ * @todo Add error handling for near-zero determinant.
+*/
+bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
+                                       double &undistortedX,
+                                       double &undistortedY ) const {
+
+
+  // Solve the distortion equation using the Newton-Raphson method.
+  // Set the error tolerance to about one millionth of a NAC pixel.
+  const double tol = 1.4E-5;
+
+  // The maximum number of iterations of the Newton-Raphson method.
+  const int maxTries = 60;
+
+  double x;
+  double y;
+  double fx;
+  double fy;
+  double Jxx;
+  double Jxy;
+  double Jyx;
+  double Jyy;
+
+  // Initial guess at the root
+  x = dx;
+  y = dy;
+
+  distortionFunction(x, y, fx, fy);
+
+  for (int count = 1; ((fabs(fx) + fabs(fy)) > tol) && (count < maxTries); count++) {
+
+    this->distortionFunction(x, y, fx, fy);
+
+    fx = dx - fx;
+    fy = dy - fy;
+
+    distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
+
+    double determinant = Jxx * Jyy - Jxy * Jyx;
+    if (determinant < 1E-6) {
+      //
+      // Near-zero determinant. Add error handling here.
+      //
+      //-- Just break out and return with no convergence
+      break;
+    }
+
+    x = x + (Jyy * fx - Jxy * fy) / determinant;
+    y = y + (Jxx * fy - Jyx * fx) / determinant;
+  }
+
+  if ( (fabs(fx) + fabs(fy)) <= tol) {
+    // The method converged to a root.
+    undistortedX = x;
+    undistortedY = y;
+
+  }
+  else {
+    // The method did not converge to a root within the maximum
+    // number of iterations. Return with no distortion.
+    undistortedX = dx;
+    undistortedY = dy;
+  }
+
+  return true;
+
+}
+
+
+/**
+ * @description Jacobian of the distortion function. The Jacobian was computed
+ * algebraically from the function described in the distortionFunction
+ * method.
+ *
+ * @param x
+ * @param y
+ * @param Jxx  Partial_xx
+ * @param Jxy  Partial_xy
+ * @param Jyx  Partial_yx
+ * @param Jyy  Partial_yy
+ */
+void MdisNacSensorModel::distortionJacobian(double x, double y, double &Jxx, double &Jxy,
+                                            double &Jyx, double &Jyy) const {
+
+  double d_dx[10];
+  d_dx[0] = 0;
+  d_dx[1] = 1;
+  d_dx[2] = 0;
+  d_dx[3] = 2 * x;
+  d_dx[4] = y;
+  d_dx[5] = 0;
+  d_dx[6] = 3 * x * x;
+  d_dx[7] = 2 * x * y;
+  d_dx[8] = y * y;
+  d_dx[9] = 0;
+  double d_dy[10];
+  d_dy[0] = 0;
+  d_dy[1] = 0;
+  d_dy[2] = 1;
+  d_dy[3] = 0;
+  d_dy[4] = x;
+  d_dy[5] = 2 * y;
+  d_dy[6] = 0;
+  d_dy[7] = x * x;
+  d_dy[8] = 2 * x * y;
+  d_dy[9] = 3 * y * y;
+
+  Jxx = 0.0;
+  Jxy = 0.0;
+  Jyx = 0.0;
+  Jyy = 0.0;
+
+  for (int i = 0; i < 10; i++) {
+    Jxx = Jxx + d_dx[i] * m_odtX[i];
+    Jxy = Jxy + d_dy[i] * m_odtX[i];
+    Jyx = Jyx + d_dx[i] * m_odtY[i];
+    Jyy = Jyy + d_dy[i] * m_odtY[i];
+  }
+
+
+}
+
+
+/**
+ * @description Compute distorted focal plane (dx,dy) coordinate  given an undistorted focal
+ * plane (ux,uy) coordinate. This describes the third order Taylor approximation to the
+ * distortion model.
+ *
+ * @param ux Undistored x
+ * @param uy Undistored y
+ * @param dx Result distorted x
+ * @param dy Result distorted y
+ */
+void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, double &dy) const {
+
+  double f[10];
+  f[0] = 1;
+  f[1] = ux;
+  f[2] = uy;
+  f[3] = ux * ux;
+  f[4] = ux * uy;
+  f[5] = uy * uy;
+  f[6] = ux * ux * ux;
+  f[7] = ux * ux * uy;
+  f[8] = ux * uy * uy;
+  f[9] = uy * uy * uy;
+
+  dx = 0.0;
+  dy = 0.0;
+
+  for (int i = 0; i < 10; i++) {
+    dx = dx + f[i] * m_odtX[i];
+    dy = dy + f[i] * m_odtY[i];
+  }
+
 }

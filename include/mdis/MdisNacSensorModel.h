@@ -273,7 +273,7 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_kappa;
     double m_focalLength;
     double m_spacecraftPosition[3];
-    double m_ccdCenter;
+    double m_ccdCenter[2];
     double m_line_pp;
     double m_sample_pp;
     double m_startingDetectorSample;
