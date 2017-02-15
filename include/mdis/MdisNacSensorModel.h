@@ -11,7 +11,7 @@
 class MdisNacSensorModel : public csm::RasterGM {
   // MdisPlugin needs to access private members
   friend class MdisPlugin;
-
+  
   public:
     MdisNacSensorModel();
     ~MdisNacSensorModel();
@@ -29,10 +29,11 @@ class MdisNacSensorModel : public csm::RasterGM {
      * @internal
      *   @todo Check if the returned line,sample is within image dimensions.
      */
-    virtual csm::ImageCoord groundToImageIan(const csm::EcefCoord &groundPt, 
+    virtual csm::ImageCoord groundToImage(const csm::EcefCoord &groundPt, 
                                      double desiredPrecision=0.001, 
                                      double *achievedPrecision=NULL, 
                                      csm::WarningList *warnings=NULL) const;
+<<<<<<< HEAD
 
     virtual csm::ImageCoord groundToImage(const csm::EcefCoord &groundPt,
                                           double desiredPrecision=0.001,
@@ -50,27 +51,33 @@ class MdisNacSensorModel : public csm::RasterGM {
 
 
 
+=======
+                                     
+    virtual csm::ImageCoordCovar groundToImage(const csm::EcefCoordCovar &groundPt, 
+                                          double desiredPrecision=0.001, 
+                                          double *achievedPrecision=NULL, 
+                                          csm::WarningList *warnings=NULL) const;
+                                          
+>>>>>>> upstream/master
     /**
     * This function determines if a sample, line intersects the target body and if so, where
     * this intersection occurs in body-fixed coordinates.
-    *
+    * 
     * @param sample Sample of the input image.
     * @param line Line of the input image.
     * @param height ???
-    *
+    * 
     * @return @b vector<double> Returns the body-fixed X,Y,Z coordinates of the intersection.
     *                           If no intersection, returns a 3-element vector of 0's.
     */
-    virtual csm::EcefCoord imageToGround(const csm::ImageCoord &imagePt, double height,
-                                    double desiredPrecision=0.001, double *achievedPrecision=NULL,
+    virtual csm::EcefCoord imageToGround(const csm::ImageCoord &imagePt, double height, 
+                                    double desiredPrecision=0.001, double *achievedPrecision=NULL, 
                                     csm::WarningList *warnings=NULL) const;
-
-    virtual csm::EcefCoordCovar imageToGround(const csm::ImageCoordCovar &imagePt, double height,
-                                           double heightVariance, double desiredPrecision=0.001,
-                                           double *achievedPrecision=NULL,
+                                    
+    virtual csm::EcefCoordCovar imageToGround(const csm::ImageCoordCovar &imagePt, double height, 
+                                           double heightVariance, double desiredPrecision=0.001, 
+                                           double *achievedPrecision=NULL, 
                                            csm::WarningList *warnings=NULL) const;
-
-                             
                                            
     /**
      * Determines the unit look direction of the sensor (in body-fixed frame) from a given
@@ -105,48 +112,48 @@ class MdisNacSensorModel : public csm::RasterGM {
                                                      double desiredPrecision=0.001, 
                                                      double *achievedPrecision=NULL, 
                                                      csm::WarningList *warnings=NULL) const;
-
+ 
     virtual csm::ImageCoord getImageStart() const;
-
+ 
     virtual csm::ImageVector getImageSize() const;
-
+ 
     virtual std::pair<csm::ImageCoord, csm::ImageCoord> getValidImageRange() const;
-
+  
     virtual std::pair<double, double> getValidHeightRange() const;
-
+ 
     virtual csm::EcefVector getIlluminationDirection(const csm::EcefCoord &groundPt) const;
-
+ 
     virtual double getImageTime(const csm::ImageCoord &imagePt) const;
-
+ 
     virtual csm::EcefCoord getSensorPosition(const csm::ImageCoord &imagePt) const;
-
+ 
     virtual csm::EcefCoord getSensorPosition(double time) const;
-
+ 
     virtual csm::EcefVector getSensorVelocity(const csm::ImageCoord &imagePt) const;
-
+ 
     virtual csm::EcefVector getSensorVelocity(double time) const;
-
-    virtual csm::RasterGM::SensorPartials computeSensorPartials(int index,
-                                                                const csm::EcefCoord &groundPt,
-                                                                double desiredPrecision=0.001,
-                                                                double *achievedPrecision=NULL,
+ 
+    virtual csm::RasterGM::SensorPartials computeSensorPartials(int index, 
+                                                                const csm::EcefCoord &groundPt, 
+                                                                double desiredPrecision=0.001, 
+                                                                double *achievedPrecision=NULL, 
                                                                 csm::WarningList *warnings=NULL) const;
-
-    virtual csm::RasterGM::SensorPartials computeSensorPartials(int index,
-                                                                const csm::ImageCoord &imagePt,
-                                                                const csm::EcefCoord &groundPt,
-                                                                double desiredPrecision=0.001,
-                                                                double *achievedPrecision=NULL,
+ 
+    virtual csm::RasterGM::SensorPartials computeSensorPartials(int index, 
+                                                                const csm::ImageCoord &imagePt, 
+                                                                const csm::EcefCoord &groundPt, 
+                                                                double desiredPrecision=0.001, 
+                                                                double *achievedPrecision=NULL, 
                                                                 csm::WarningList *warnings=NULL) const;
-
+                                                 
     virtual std::vector<double> computeGroundPartials(const csm::EcefCoord &groundPt) const;
-
+ 
     virtual const csm::CorrelationModel &getCorrelationModel() const;
-
-    virtual std::vector<double> getUnmodeledCrossCovariance(const csm::ImageCoord &pt1,
+    
+    virtual std::vector<double> getUnmodeledCrossCovariance(const csm::ImageCoord &pt1, 
                                                             const csm::ImageCoord &pt2) const;
-
-    // IMPLEMENT MODEL PURE VIRTUALS
+                                                            
+    // IMPLEMENT MODEL PURE VIRTUALS                                                            
     //---
     // Basic model information
     //---
@@ -272,7 +279,7 @@ class MdisNacSensorModel : public csm::RasterGM {
       //
       //  If the argument state string is empty, the model remains unchanged.
       //<
-
+ 
     // IMPLEMENT GEOMETRICMODEL PURE VIRTUALS
     // See GeometricModel.h for documentation
     virtual csm::EcefCoord getReferencePoint() const;
@@ -296,14 +303,14 @@ class MdisNacSensorModel : public csm::RasterGM {
     virtual std::vector<double> getCrossCovarianceMatrix(
         const GeometricModel &comparisonModel,
         csm::param::Set pSet = csm::param::VALID,
-        const GeometricModelList &otherModels = GeometricModelList()) const;
-
+        const GeometricModelList &otherModels = GeometricModelList()) const;          
+        
     static const std::string _SENSOR_MODEL_NAME;
 
 
+                                                            
 
-
-
+    
   protected:
 
     virtual bool undistortedFocalCoords(double dx,double dy,double &undistortedX,
@@ -400,9 +407,8 @@ class MdisNacSensorModel : public csm::RasterGM {
                                const std::vector<double> &rotationMatrix,
                                bool invert = false) const;
     
-
   private:
-
+    
     double m_transX[3];
     double m_transY[3];
     double m_majorAxis;
@@ -413,8 +419,6 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_focalLength;
     double m_spacecraftPosition[3];
     double m_ccdCenter;
-    double m_line_pp;
-    double m_sample_pp;
     double m_startingDetectorSample;
     double m_startingDetectorLine;
     std::string m_targetName;
@@ -432,14 +436,7 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_originalHalfSamples;
     double m_boresight[3];
     int m_nLines;
-    int m_nSamples;
-
-    void calcRotationMatrix(double m[3][3]) const;
-    void losEllipsoidIntersect (const double& height,const double& xc,
-                                const double& yc, const double& zc,
-                                const double& xl, const double& yl,
-                                const double& zl,
-                                double& x,double& y, double&  z) const;
+    int m_nSamples;    
 };
 
 #endif
