@@ -110,7 +110,7 @@ MdisNacSensorModel::~MdisNacSensorModel() {}
  *       algorithm.
  * @todo Add error handling for near-zero determinant.
 */
-bool MdisNacSensorModel::undistortedFocalCoords(double dx,double dy,
+bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
                                        double &undistortedX,
                                        double &undistortedY,double epsilon) const {
 
@@ -368,7 +368,7 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
   double undistortedFocalPlaneX = focalPlaneX;
   double undistortedFocalPlaneY = focalPlaneY;
 
-  undistortedFocalCoords(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
+  setFocalPlane(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
 
   // Trigonometric functions for rotation matrix
   const double sinw = std::sin(m_omega);
