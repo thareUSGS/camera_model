@@ -33,32 +33,12 @@ class MdisNacSensorModel : public csm::RasterGM {
                                      double desiredPrecision=0.001, 
                                      double *achievedPrecision=NULL, 
                                      csm::WarningList *warnings=NULL) const;
-<<<<<<< HEAD
-
-    virtual csm::ImageCoord groundToImage(const csm::EcefCoord &groundPt,
-                                          double desiredPrecision=0.001,
-                                          double *achievedPrecision=NULL,
-                                          csm::WarningList *warnings=NULL) const;
-
-
-
-
-
-    virtual csm::ImageCoordCovar groundToImage(const csm::EcefCoordCovar &groundPt,
-                                          double desiredPrecision=0.001,
-                                          double *achievedPrecision=NULL,
-                                          csm::WarningList *warnings=NULL) const;
-
-
-
-=======
                                      
     virtual csm::ImageCoordCovar groundToImage(const csm::EcefCoordCovar &groundPt, 
                                           double desiredPrecision=0.001, 
                                           double *achievedPrecision=NULL, 
                                           csm::WarningList *warnings=NULL) const;
                                           
->>>>>>> upstream/master
     /**
     * This function determines if a sample, line intersects the target body and if so, where
     * this intersection occurs in body-fixed coordinates.
@@ -313,7 +293,7 @@ class MdisNacSensorModel : public csm::RasterGM {
     
   protected:
 
-    virtual bool undistortedFocalCoords(double dx,double dy,double &undistortedX,
+    virtual bool setFocalPlane(double dx,double dy,double &undistortedX,
                                         double &undistortedY,double epsilon=1.4e-5) const;
     virtual void distortionFunction(double ux, double uy, double &dx, double &dy) const;
     virtual void distortionJacobian(double x, double y, double &Jxx,
@@ -403,7 +383,7 @@ class MdisNacSensorModel : public csm::RasterGM {
      * 
      * @return @b vector<double> Returns the rotated vector. 
      */
-    std::vector<double> rotate(const std::vector<double> &v,
+    std::vector<double> rotate(const std::vector<double> &v, 
                                const std::vector<double> &rotationMatrix,
                                bool invert = false) const;
     

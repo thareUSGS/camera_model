@@ -30,7 +30,7 @@ class TestableMdisNacSensorModel : public MdisNacSensorModel {
     using MdisNacSensorModel::dot;
     using MdisNacSensorModel::magnitude;
     using MdisNacSensorModel::normalize;
-    using MdisNacSensorModel::undistortedFocalCoords;
+    using MdisNacSensorModel::setFocalPlane;
 };
 
 
