@@ -64,9 +64,11 @@ if(NOT SPICE_BASE_PATH)
 
 else(NOT SPICE_BASE_PATH)
 
+  MESSAGE("BASE: ${SPICE_BASE_PATH}")
   # Good, path has been set/found, now set important variables and find libraries.
   set(SPICE_BASE_PATH ${SPICE_BASE_PATH}/..)
-  set(SPICE_INCLUDE_DIR ${SPICE_BASE_PATH}/..)
+  MESSAGE("BASE2: ${SPICE_BASE_PATH}")
+  set(SPICE_INCLUDE_DIR ${SPICE_BASE_PATH}/include)
   set(SPICE_LIBRARIES_DIR ${SPICE_BASE_PATH}/lib)
 
   find_library(SPICE_LIBRARIES

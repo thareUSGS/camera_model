@@ -7,11 +7,11 @@
 
 using namespace std;
 
-const std::string MdisNacSensorModel::_SENSOR_MODEL_NAME 
+const std::string MdisNacSensorModel::_SENSOR_MODEL_NAME
                                       = "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so";
 
 
-                                      
+
 MdisNacSensorModel::MdisNacSensorModel() {
 
   m_transX[0] = 0.0;
@@ -21,46 +21,32 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_transY[0] = 0.0;
   m_transY[1] = 0.0;
   m_transY[2] = 0.0;
-  
+
+  m_iTransS[0] = 0.0;
+  m_iTransS[1] = 0.0;
+  m_iTransS[2] = 0.0;
+
+  m_iTransL[0] = 0.0;
+  m_iTransL[0] = 0.0;
+  m_iTransL[0] = 0.0;
+
   m_majorAxis = 0.0;
   m_minorAxis = 0.0;
   m_omega = 0.0;
   m_phi = 0.0;
   m_kappa = 0.0;
   m_focalLength = 0.0;
-  
+
   m_spacecraftPosition[0] = 0.0;
   m_spacecraftPosition[1] = 0.0;
   m_spacecraftPosition[2] = 0.0;
-  
-  m_ccdCenter = 0.0;
 
+  m_ccdCenter[0] = 0.0;
+  m_ccdCenter[1] = 0.0;
 
+  m_line_pp = 0.0;
+  m_sample_pp = 0.0;
 
-  //NAC coefficients 
-  m_odtX[0]=0.0;
-  m_odtX[1]=1.0018542696237999756;
-  m_odtX[2]=-0.0;
-  m_odtX[3]=-0.0;
-  m_odtX[4]=-0.00050944404749411103042;
-  m_odtX[5]=0.0;
-  m_odtX[6]=1.0040104714688599425e-05;
-  m_odtX[7]=0.0;
-  m_odtX[8]=1.0040104714688599425e-05;
-  m_odtX[9]=0.0;
-
-  m_odtY[0]=0.0;
-  m_odtY[1]=0.0;
-  m_odtY[2]=1.0;
-  m_odtY[3]=0.00090600105949967496381;
-  m_odtY[4]=0.0;
-  m_odtY[5]=0.00035748426266207598964;
-  m_odtY[6]=0.0;
-  m_odtY[7]=1.0040104714688599425e-05;
-  m_odtY[8]=0.0;
-  m_odtY[9]=1.0040104714688599425e-05;
-
-#if 0
   m_odtX[0] = 0.0;
   m_odtX[1] = 0.0;
   m_odtX[2] = 0.0;
@@ -82,623 +68,147 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_odtY[7] = 0.0;
   m_odtY[8] = 0.0;
   m_odtY[9] = 0.0;
-#endif
-
 }
 
 
 MdisNacSensorModel::~MdisNacSensorModel() {}
 
+csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt,
+                              double desiredPrecision,
+                              double *achievedPrecision,
+                              csm::WarningList *warnings) const {
 
-/**
- * @brief Compute undistorted focal plane x/y.
- *
- * Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
- * coordinate. The undistorted coordinates are solved for using the Newton-Raphson
- * method for root-finding if the distortionFunction method is invoked.
- *
- * @param dx distorted focal plane x in millimeters
- * @param dy distorted focal plane y in millimeters
- * @param undistortedX The undistorted x coordinate, in millimeters.
- * @param undistortedY The undistorted y coordinate, in millimeters.
- * @param epsilon  The error tolerance.  The default value of 1.4e-5 is about
- * one-millionth of a NAC pixel
- * @return if the conversion was successful
- * @todo Review the tolerance and maximum iterations of the root-
- *       finding algorithm.
- * @todo Review the handling of non-convergence of the root-finding
- *       algorithm.
- * @todo Add error handling for near-zero determinant.
-*/
-bool MdisNacSensorModel::undistortedFocalCoords(double dx,double dy,
-                                       double &undistortedX,
-                                       double &undistortedY,double epsilon) const {
+double xl, yl, zl;
+xl = m_spacecraftPosition[0];
+yl = m_spacecraftPosition[1];
+zl = m_spacecraftPosition[2];
 
+double x, y, z;
+x = groundPt.x;
+y = groundPt.y;
+z = groundPt.z;
 
-  // Solve the distortion equation using the Newton-Raphson method.
-  // Set the error tolerance to about one millionth of a NAC pixel.
-  const double tol = 1.4E-5;
+double xo, yo, zo;
+xo = xl - x;
+yo = yl - y;
+zo = zl - z;
 
-  // The maximum number of iterations of the Newton-Raphson method.
-  const int maxTries = 20;
+double f;
+f = m_focalLength;
 
-  double x;
-  double y;
-  double fx;
-  double fy;
-  double Jxx;
-  double Jxy;
-  double Jyx;
-  double Jyy;
+// Camera rotation matrix
+double m[3][3];
+calcRotationMatrix(m);
 
-  // Initial guess at the root
-  x = dx;
-  y = dy;
+// Sensor position
+double undistortedx, undistortedy, denom;
+denom = m[0][2] * xo + m[1][2] * yo + m[2][2] * zo;
+undistortedx = (-f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_sample_pp;  //m_sample_pp like this assumes mm
+undistortedy = (-f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_line_pp;
 
-  distortionFunction(x, y, fx, fy);
+// Apply the distortion to the line/sample location and then convert back to line/sample
+double distortedx, distortedy;
+setFocalPlane(undistortedx, undistortedy, distortedx, distortedy);
 
-  for (int count = 1; ((fabs(fx) + fabs(fy)) > tol) && (count < maxTries); count++) {
+//Convert distorted mm into line/sample
+double sample, line;
+sample = distortedx / m_transX[1] + m_ccdCenter[0];
+line = distortedy / m_transY[2] + m_ccdCenter[1];
 
-    this->distortionFunction(x, y, fx, fy);
-
-    fx = dx - fx;
-    fy = dy - fy;
-
-    distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
-
-    double determinant = Jxx * Jyy - Jxy * Jyx;
-    if (determinant < 1E-6) {
-      //
-      // Near-zero determinant. Add error handling here.
-      //
-      //-- Just break out and return with no convergence
-      break;
-    }
-
-    x = x + (Jyy * fx - Jxy * fy) / determinant;
-    y = y + (Jxx * fy - Jyx * fx) / determinant;
-  }
-
-  if ( (fabs(fx) + fabs(fy)) <= epsilon) {
-    // The method converged to a root.
-    undistortedX = x;
-    undistortedY = y;
-
-  }
-  else {
-    // The method did not converge to a root within the maximum
-    // number of iterations. Return with no distortion.
-    undistortedX = dx;
-    undistortedY = dy;
-  }
-
-  return true;
-
+return csm::ImageCoord(line, sample);
 }
 
 
-/**
- * @description Jacobian of the distortion function. The Jacobian was computed
- * algebraically from the function described in the distortionFunction
- * method.
- *
- * @param x
- * @param y
- * @param Jxx  Partial_xx
- * @param Jxy  Partial_xy
- * @param Jyx  Partial_yx
- * @param Jyy  Partial_yy
- */
-void MdisNacSensorModel::distortionJacobian(double x, double y, double &Jxx, double &Jxy,
-                                            double &Jyx, double &Jyy) const {
-
-  double d_dx[10];
-  d_dx[0] = 0;
-  d_dx[1] = 1;
-  d_dx[2] = 0;
-  d_dx[3] = 2 * x;
-  d_dx[4] = y;
-  d_dx[5] = 0;
-  d_dx[6] = 3 * x * x;
-  d_dx[7] = 2 * x * y;
-  d_dx[8] = y * y;
-  d_dx[9] = 0;
-  double d_dy[10];
-  d_dy[0] = 0;
-  d_dy[1] = 0;
-  d_dy[2] = 1;
-  d_dy[3] = 0;
-  d_dy[4] = x;
-  d_dy[5] = 2 * y;
-  d_dy[6] = 0;
-  d_dy[7] = x * x;
-  d_dy[8] = 2 * x * y;
-  d_dy[9] = 3 * y * y;
-
-  Jxx = 0.0;
-  Jxy = 0.0;
-  Jyx = 0.0;
-  Jyy = 0.0;
-
-  for (int i = 0; i < 10; i++) {
-    Jxx = Jxx + d_dx[i] * m_odtX[i];
-    Jxy = Jxy + d_dy[i] * m_odtX[i];
-    Jyx = Jyx + d_dx[i] * m_odtY[i];
-    Jyy = Jyy + d_dy[i] * m_odtY[i];
-  }
-
-
-}
-
-
-/**
- * @description Compute distorted focal plane (dx,dy) coordinate  given an undistorted focal
- * plane (ux,uy) coordinate. This describes the third order Taylor approximation to the
- * distortion model.
- *
- * @param ux Undistored x
- * @param uy Undistored y
- * @param dx Result distorted x
- * @param dy Result distorted y
- */
-void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, double &dy) const {
-
-  double f[10];
-  f[0] = 1;
-  f[1] = ux;
-  f[2] = uy;
-  f[3] = ux * ux;
-  f[4] = ux * uy;
-  f[5] = uy * uy;
-  f[6] = ux * ux * ux;
-  f[7] = ux * ux * uy;
-  f[8] = ux * uy * uy;
-  f[9] = uy * uy * uy;
-
-  dx = 0.0;
-  dy = 0.0;
-
-  for (int i = 0; i < 10; i++) {
-    dx = dx + f[i] * m_odtX[i];
-    dy = dy + f[i] * m_odtY[i];
-  }
-
-}
-
-
-csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt, 
-                                                  double desiredPrecision, 
-                                                  double *achievedPrecision, 
-                                                  csm::WarningList *warnings) const {
-  // Get the rotation matrix from ISD supplied omega, phi, kappa
-  std::vector<double> rotation = createRotationMatrix(m_omega, m_phi, m_kappa);
-  
-  // Determine the center look direction (centerX, centerY, f) of the sensor in body-fixed
-  // (e.g. the sensor's optical axis rotated into body-fixed frame)
-  double centerX = 0.0;
-  double centerY = 0.0;
-  std::vector<double> sensorLookC { 0.0, 0.0, m_focalLength };
-  std::vector<double> sensorLookB = rotate(sensorLookC, rotation);
-  
-  // Find the look vector from the sensor center look to the ground point in body-fixed
-  std::vector<double> lookGroundB {
-    groundPt.x - m_spacecraftPosition[0],
-    groundPt.y - m_spacecraftPosition[1],
-    groundPt.z - m_spacecraftPosition[2],
-  };
-  
-  // Normalize by sacling the sensor-to-ground look to the sensor center look in body-fixed
-  double sensorLookBMag = sqrt( dot(sensorLookB, sensorLookB) );
-  double lookGroundBMag = sqrt( dot(lookGroundB, lookGroundB) );
-  double scale = sensorLookBMag / lookGroundBMag;
-  lookGroundB[0] = scale * lookGroundB[0]; 
-  lookGroundB[1] = scale * lookGroundB[1]; 
-  lookGroundB[2] = scale * lookGroundB[2]; 
-    
-  // Rotate the sensor-to-ground look vector from body-fixed to sensor frame (inverse rotation)
-  std::vector<double> lookGroundC = rotate(lookGroundB, rotation, true);
-    
-  // Scale the sensor-to-ground sensor frame vector so that it intersects the focal plane
-  // (i.e. scale it so its Z component equals the sensor's focal length)
-  scale = m_focalLength / lookGroundC[2];
-  double focalPlaneX = lookGroundC[0] * scale;
-  double focalPlaneY = lookGroundC[1] * scale;
-  
-  // Distortion
-  double distortedFocalPlaneX = focalPlaneX;
-  double distortedFocalPlaneY = focalPlaneY;
-  distortionFunction(focalPlaneX,focalPlaneY,distortedFocalPlaneX,distortedFocalPlaneY);
-
-
-  // Convert focal plane mm to pixels
-  double pixelX =  distortedFocalPlaneX * (1.0 / m_transX[1]);
-  double pixelY =  distortedFocalPlaneY * (1.0 / m_transY[2]);
-  
-  // Convert pixels to line,sample
-  double sample = pixelX + m_ccdCenter - 0.5;
-  double line = pixelY + m_ccdCenter - 0.5;
-  
-  // Check if the computed line,sample coordinate is within the image dimensions
-  bool outOfBounds = false;
-  if (sample > m_nSamples || sample < 0.0 || line > m_nLines || line < 0.0) {
-    outOfBounds = true;
-  }
-  if (outOfBounds) {
-    if (warnings != nullptr) {
-      std::string msg("The image coordinate is outside the image dimensions.");
-      std::string func("MdisNacSensorModel::imageToGround");
-      warnings->push_front(csm::Warning(csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
-                                        msg,
-                                        func));
-    }
-  }
-  
-  return csm::ImageCoord(line, sample);
-}
-       
-       
-csm::ImageCoordCovar MdisNacSensorModel::groundToImage(const csm::EcefCoordCovar &groundPt, 
-                                   double desiredPrecision, 
-                                   double *achievedPrecision, 
+csm::ImageCoordCovar MdisNacSensorModel::groundToImage(const csm::EcefCoordCovar &groundPt,
+                                   double desiredPrecision,
+                                   double *achievedPrecision,
                                    csm::WarningList *warnings) const {
 
     throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
       "Unsupported function",
       "MdisNacSensorModel::groundToImage");
 }
-                
-                
-csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt, 
-                                                 double height, 
-                                                 double desiredPrecision, 
-                                                 double *achievedPrecision, 
+
+
+csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
+                                                 double height,
+                                                 double desiredPrecision,
+                                                 double *achievedPrecision,
                                                  csm::WarningList *warnings) const {
 
   double sample = imagePt.samp;
   double line = imagePt.line;
 
-  // center the sample line
-  sample -= m_ccdCenter - 0.5; // ISD needs a center sample in CSM coord
-  line -= m_ccdCenter - 0.5; // ISD needs a center line in CSM coord (.5 .5 pixel centers)
-  
-  // Convert from sample/line to focal plane coordinates (in mm)
-  double focalPlaneX = m_transX[0] + (m_transX[1] * sample) + (m_transX[2] * line);
-  double focalPlaneY = m_transY[0] + (m_transY[1] * sample) + (m_transY[2] * line);
+  //Here is where we should be able to apply an adjustment to opk
+  double m[3][3];
+  calcRotationMatrix(m);
 
-  double undistortedFocalPlaneX = focalPlaneX;
-  double undistortedFocalPlaneY = focalPlaneY;
+  //Apply the principal point offset, assuming the pp is given in pixels
+  double xl, yl, zl, lo, so;
+  lo = line - m_line_pp;
+  so = sample - m_sample_pp;
 
-  undistortedFocalCoords(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
+  //Convert from the pixel space into the metric space
+  double optical_center_x, optical_center_y, x_camera, y_camera;
+  optical_center_x = m_ccdCenter[0];
+  optical_center_y = m_ccdCenter[1]; //This should be a vector from the ISD
+  y_camera = (lo - optical_center_y) / m_iTransL[2];
+  x_camera = (so - optical_center_x) / m_iTransS[1];
 
-  // Trigonometric functions for rotation matrix
-  const double sinw = std::sin(m_omega);
-  const double sinp = std::sin(m_phi);
-  const double sink = std::sin(m_kappa);
-  const double cosw = std::cos(m_omega);
-  const double cosp = std::cos(m_phi);
-  const double cosk = std::cos(m_kappa);
+  // Apply the distasdortion model
+  double distorted_cameraX, distorted_cameraY;
+  distortionFunction(y_camera, x_camera, distorted_cameraY, distorted_cameraX);
 
-  // Rotation matrix taken from Introduction to Mordern Photogrammetry by 
-  // Edward M. Mikhail, et al., p. 373
-  std::vector<double> m(9);
-  m[0] = cosp * cosk;
-  m[1] = cosw * sink + sinw * sinp * cosk;
-  m[2] = sinw * sink - cosw * sinp * cosk;
-  m[3] = -1 * cosp * sink;
-  m[4] = cosw * cosk - sinw * sinp * sink;
-  m[5] = sinw * cosk + cosw * sinp * sink;
-  m[6] = sinp;
-  m[7] = -1 * sinw * cosp;
-  m[8] = cosw * cosp;
-  
-  // Multiply the focal vector to the rotation matrix to get the direction of the camera
-  std::vector<double> direction(3);
-  direction[0] = m[0] * undistortedFocalPlaneX + m[1] * undistortedFocalPlaneY + m[2] * m_focalLength;
-  direction[1] = m[3] * undistortedFocalPlaneX + m[4] * undistortedFocalPlaneY + m[5] * m_focalLength;
-  direction[2] = m[6] * undistortedFocalPlaneX + m[7] * undistortedFocalPlaneY + m[8] * m_focalLength;
-    
-  // Save the spacecraft position as a vector
-  std::vector<double> spacecraftPosition(3);
-  spacecraftPosition[0] = m_spacecraftPosition[0];
-  spacecraftPosition[1] = m_spacecraftPosition[1];
-  spacecraftPosition[2] = m_spacecraftPosition[2];
-  
-  // Perform the intersection
-  return intersect(spacecraftPosition, direction, m_majorAxis);
+  //Now back from distorted mm to pixels
+  double dx, dy; //distorted line and sample
+  dx = distorted_cameraX;
+  dy = distorted_cameraY;
+
+  xl = m[0][0] * dx + m[0][1] * dy - m[0][2] * -m_focalLength;
+  yl = m[1][0] * dx + m[1][1] * dy - m[1][2] * -m_focalLength;
+  zl = m[2][0] * dx + m[2][1] * dy - m[2][2] * -m_focalLength;
+
+  double x, y, z;
+  double xc, yc, zc;
+  xc = m_spacecraftPosition[0];
+  yc = m_spacecraftPosition[1];
+  zc = m_spacecraftPosition[2];
+
+  // Intersect with some height about the ellipsoid.
+  losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z);
+
+  return csm::EcefCoord(x, y, z);
 }
 
-
-double MdisNacSensorModel::computeElevation(double x, double y, double z) const {
-  // For now, assume a sphere for Mercury. This will change for ellispoids/DEMs.
-  // (radius + elevation)^2 = x^2 + y^2 + z^2
-  // double localRadius = sqrt(x*x + y*y + z*z);
-  // return localRadius - m_majorAxis;
-  return 0;
-}
-
-
-csm::EcefCoord MdisNacSensorModel::intersect(const std::vector<double> &sensorPosition, 
-                                             const std::vector<double> &direction, 
-                                             double radius) const {
-  
-  std::vector<double> intersectionPoint(3), unitSensorPosition(3), unitDirection(3);
-  
-  // Transform the look direction vector into unit sphere space.
-  unitDirection[0] = direction[0] / radius;
-  unitDirection[1] = direction[1] / radius;
-  unitDirection[2] = direction[2] / radius;
-  
-  // Transform the spacecraft position vector into unit sphere space.
-  unitSensorPosition[0] = sensorPosition[0] / radius;
-  unitSensorPosition[1] = sensorPosition[1] / radius;
-  unitSensorPosition[2] = sensorPosition[2] / radius;
-  
-  // Find this vector:
-  // If you extend the look direction infinitely, find the vector that is
-  // perpendicular to that look direction and points to the body's origin.
-  std::vector<double> perpendicularV = perpendicular(unitSensorPosition, unitDirection);
-  
-  // The look direction vector extended to the perpendicular vector.
-  std::vector<double> positionProj(3);
-  positionProj[0] = unitSensorPosition[0] - perpendicularV[0];
-  positionProj[1] = unitSensorPosition[1] - perpendicularV[1];
-  positionProj[2] = unitSensorPosition[2] - perpendicularV[2];
-  
-  // Find magnitudes of the "unit" spacecraft position vector and perpendicular vector.
-  double positionMag = magnitude(unitSensorPosition);
-  double perpendicularMag = magnitude(perpendicularV);
-  
-  // Use max-norm (infinity-norm) to normalize the "unit" look direction vector.
-  std::vector<double> unitDirectionNorm = normalize(unitDirection);
-  
-  // Positive sign indicates spacecraft is in the target body,
-  // negative indicates spacecraft is outside the target body.
-  int sign = 1;
-  
-  // If the spacecraft position is outside the target body
-  if (positionMag > 1.0) {
-    // If vector perpendicular to look direction has magnitude > 1,
-    // we are not looking at the target body (since the body is a "unit sphere")
-    if (perpendicularMag > 1.0) {
-      csm::EcefCoord coord(intersectionPoint[0], intersectionPoint[1], intersectionPoint[2]);
-      return coord; // empty
-    }
-    
-    // If looking away from the target body, there is no intersection.
-    if (dot(positionProj, unitDirection) > 0.0) {
-      csm::EcefCoord coord(intersectionPoint[0], intersectionPoint[1], intersectionPoint[2]);
-      return coord; // empty
-    }
-    
-    // If intersection point is on the limb, then transform back to target body size.
-    if (perpendicularMag == 1.0) {
-      intersectionPoint[0] = perpendicularV[0] * radius;
-      intersectionPoint[1] = perpendicularV[1] * radius;
-      intersectionPoint[2] = perpendicularV[2] * radius;
-      csm::EcefCoord coord(intersectionPoint[0], intersectionPoint[1], intersectionPoint[2]);
-      return coord;
-    }
-    
-    sign = -1;
-  }
-  // If the spacecraft is on the target body
-  else if (positionMag == 1.0) {
-    csm::EcefCoord coord(sensorPosition[0], sensorPosition[1], sensorPosition[2]);
-    return coord;
-  }
-  // If the spacecraft is inside the target body??? (target is sky?)
-  else {
-    sign = 1;
-  }
-  
-  // To visualize:
-  // There exists a scalar, scale, such that 
-  // ||perpendicularV||^2 + scale^2 = radius^2.
-  // Since we are in unit sphere space, the radius = 1.
-  double scale = 1 - perpendicularMag * perpendicularMag;
-  if (scale < 0.0) {
-    scale = 0.0;
-  }
-  scale = sqrt(scale);
-  
-  // Find the intersection: 
-  /*
-   *              perpendicularV 
-   * intersect o<-----^
-   *          r \     |  scale * normalized look direction * sign
-   *           a \    |  
-   *            d \   |
-   *             i \  |       
-   *              u \ ^
-   *               s \|  normalized look direction * sign
-   *                  o  center of target body
-   */
-  // We can multiply the scale by the unit look vector and add the perpendicular vector
-  // to get the intersection point
-  intersectionPoint[0] = perpendicularV[0] + sign * scale * unitDirectionNorm[0];
-  intersectionPoint[1] = perpendicularV[1] + sign * scale * unitDirectionNorm[1];
-  intersectionPoint[2] = perpendicularV[2] + sign * scale * unitDirectionNorm[2];
-  
-  // Rescale the intersectionPoint from unit sphere space to ellipsoid space
-  intersectionPoint[0] *= radius;
-  intersectionPoint[1] *= radius;
-  intersectionPoint[2] *= radius;
-  
-  csm::EcefCoord coord(intersectionPoint[0], intersectionPoint[1], intersectionPoint[2]);
-
-  return coord;
-}
-
-
-std::vector<double> MdisNacSensorModel::perpendicular(const std::vector<double> &v1, 
-                                                      const std::vector<double> &v2) const {
-  
-  double max1 = 0.0;
-  double max2 = 0.0;
-  
-  // Get the infinite norm for each vector.
-  for (int i = 0; i < 3; i++) {
-    if (std::abs(v1[i]) > max1) {
-      max1 = std::abs(v1[i]);
-    }
-    if (std::abs(v2[i]) > max2) {
-      max2 = std::abs(v2[i]);
-    }
-  }
-  
-  // Scale the vectors by their max norms (not sure why this is needed, optimization maybe?).
-  std::vector<double> newV1(3), newV2(3);
-  
-  newV1[0] = v1[0] / max1;
-  newV1[1] = v1[1] / max1;
-  newV1[2] = v1[2] / max1;
-  
-  newV2[0] = v2[0] / max2;
-  newV2[1] = v2[1] / max2;
-  newV2[2] = v2[2] / max2;
-  
-  // Project first vector onto second vector.
-  std::vector<double> parallelV = project(newV1, newV2);
-  
-  std::vector<double> perpendicularV(3);
-  
-  // Get the perpendicular vector by subtracting the first vector by its projection
-  // onto the second.
-  perpendicularV[0] = v1[0] - parallelV[0] * max1;
-  perpendicularV[1] = v1[1] - parallelV[1] * max1;
-  perpendicularV[2] = v1[2] - parallelV[2] * max1;
-  
-  return perpendicularV;
-}
-
-
-std::vector<double> MdisNacSensorModel::project(const std::vector<double> &v1, 
-                                                const std::vector<double> &v2) const {
-                                                  
-  double v1Dotv2 = dot(v1, v2);
-  double v2Dotv2 = dot(v2, v2);
-  std::vector<double> projV(3);
-  projV[0] = v1Dotv2 / v2Dotv2 * v2[0];
-  projV[1] = v1Dotv2 / v2Dotv2 * v2[1];
-  projV[2] = v1Dotv2 / v2Dotv2 * v2[2];
-  return projV;
-}
-
-
-double MdisNacSensorModel::dot(const std::vector<double> &v1, 
-                               const std::vector<double> &v2) const {
-                                 
-  return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
-}
-
-
-double MdisNacSensorModel::magnitude(const std::vector<double> &v) const {
-  
-  return sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-}
-
-
-std::vector<double> MdisNacSensorModel::normalize(const std::vector<double> &v) const {
-  
-  double mag = magnitude(v);
-  std::vector<double> n(3);
-  n[0] = v[0] / mag;
-  n[1] = v[1] / mag;
-  n[2] = v[2] / mag;
-  return n;
-}
-
-
-std::vector<double> MdisNacSensorModel::createRotationMatrix(const double omega,
-                                                             const double phi,
-                                                             const double kappa) const {
-  // Trigonometric functions for rotation matrix
-  const double sinw = std::sin(omega);
-  const double sinp = std::sin(phi);
-  const double sink = std::sin(kappa);
-  const double cosw = std::cos(omega);
-  const double cosp = std::cos(phi);
-  const double cosk = std::cos(kappa);
-  
-  std::vector<double> m(9);
-  m[0] = cosp * cosk;
-  m[1] = cosw * sink + sinw * sinp * cosk;
-  m[2] = sinw * sink - cosw * sinp * cosk;
-  m[3] = -1 * cosp * sink;
-  m[4] = cosw * cosk - sinw * sinp * sink;
-  m[5] = sinw * cosk + cosw * sinp * sink;
-  m[6] = sinp;
-  m[7] = -1 * sinw * cosp;
-  m[8] = cosw * cosp;
-  
-  return m;
-}
-
-
-std::vector<double> MdisNacSensorModel::rotate(const std::vector<double> &v,
-                                               const std::vector<double> &rotationMatrix,
-                                               bool invert) const {
-  std::vector<double> rotated(3);
-  if (!invert) {
-    rotated[0] = rotationMatrix[0] * v[0] + rotationMatrix[1] * v[1] + rotationMatrix[2] * v[2];
-    rotated[1] = rotationMatrix[3] * v[0] + rotationMatrix[4] * v[1] + rotationMatrix[5] * v[2];
-    rotated[2] = rotationMatrix[6] * v[0] + rotationMatrix[7] * v[1] + rotationMatrix[8] * v[2];
-  }
-  else {
-    rotated[0] = rotationMatrix[0] * v[0] + rotationMatrix[3] * v[1] + rotationMatrix[6] * v[2];
-    rotated[1] = rotationMatrix[1] * v[0] + rotationMatrix[4] * v[1] + rotationMatrix[7] * v[2];
-    rotated[2] = rotationMatrix[2] * v[0] + rotationMatrix[5] * v[1] + rotationMatrix[8] * v[2];
-  }
-  return rotated;
-}
-
-
-csm::EcefCoordCovar MdisNacSensorModel::imageToGround(const csm::ImageCoordCovar &imagePt, double height, 
-                                  double heightVariance, double desiredPrecision, 
-                                  double *achievedPrecision, 
+csm::EcefCoordCovar MdisNacSensorModel::imageToGround(const csm::ImageCoordCovar &imagePt, double height,
+                                  double heightVariance, double desiredPrecision,
+                                  double *achievedPrecision,
                                   csm::WarningList *warnings) const {
     throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
       "Unsupported function",
       "MdisNacSensorModel::imageToGround");
 }
 
-csm::EcefLocus MdisNacSensorModel::imageToProximateImagingLocus(const csm::ImageCoord &imagePt, 
-                                                                const csm::EcefCoord &groundPt, 
-                                                                double desiredPrecision, 
-                                                                double *achievedPrecision, 
-                                                                csm::WarningList *warnings) const {
-  // Ignore the ground point?
-  return imageToRemoteImagingLocus(imagePt);
-}
-             
-             
-csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoord &imagePt, 
-                                                             double desiredPrecision, 
-                                                             double *achievedPrecision, 
-                                                             csm::WarningList *warnings) const {
-  // Find the line,sample on the focal plane (mm)
-  // CSM center = 0.5, MDIS IK center = 1.0
-  double col = imagePt.samp - (m_ccdCenter - 0.5);
-  double row = imagePt.line - (m_ccdCenter - 0.5);
-  double focalPlaneX = m_transX[0] + m_transX[1] * col + m_transX[2] * col;
-  double focalPlaneY = m_transY[0] + m_transY[1] * row + m_transY[2] * row;
-  
-  // Distort
-  double undistortedFocalPlaneX = focalPlaneX;
-  double undistortedFocalPlaneY = focalPlaneY;
+csm::EcefLocus MdisNacSensorModel::imageToProximateImagingLocus(const csm::ImageCoord &imagePt,
+                                            const csm::EcefCoord &groundPt,
+                                            double desiredPrecision,
+                                            double *achievedPrecision,
+                                            csm::WarningList *warnings) const {
 
-  setFocalPlane(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
-  
-  // Get rotation matrix and transform to a body-fixed frame
-  std::vector<double> m = createRotationMatrix(m_omega, m_phi, m_kappa);
-  std::vector<double> lookC = { undistortedFocalPlaneX, undistortedFocalPlaneY, m_focalLength };
-  std::vector<double> lookB = rotate(lookC, m);
-  
-  // Get unit vector
-  std::vector<double> lookBUnit = normalize(lookB);
-  
-  return csm::EcefLocus(m_spacecraftPosition[0], m_spacecraftPosition[1], m_spacecraftPosition[2],
-      lookBUnit[0], lookBUnit[1], lookBUnit[2]);
+    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
+      "Unsupported function",
+      "MdisNacSensorModel::imageToProximateImagingLocus");
+}
+
+
+csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoord &imagePt,
+                                         double desiredPrecision,
+                                         double *achievedPrecision,
+                                         csm::WarningList *warnings) const {
+
+    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
+      "Unsupported function",
+      "MdisNacSensorModel::imageToRemoteImagingLocus");
 }
 
 
@@ -772,9 +282,9 @@ csm::EcefVector MdisNacSensorModel::getSensorVelocity(double time) const {
       "MdisNacSensorModel::getSensorVelocity");
 }
 
-csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index, const csm::EcefCoord &groundPt, 
-                                           double desiredPrecision, 
-                                           double *achievedPrecision, 
+csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index, const csm::EcefCoord &groundPt,
+                                           double desiredPrecision,
+                                           double *achievedPrecision,
                                            csm::WarningList *warnings) const {
 
     throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
@@ -782,17 +292,17 @@ csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int inde
       "MdisNacSensorModel::computeSensorPartials");
 }
 
-csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index, const csm::ImageCoord &imagePt, 
-                                          const csm::EcefCoord &groundPt, 
-                                          double desiredPrecision, 
-                                          double *achievedPrecision, 
+csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index, const csm::ImageCoord &imagePt,
+                                          const csm::EcefCoord &groundPt,
+                                          double desiredPrecision,
+                                          double *achievedPrecision,
                                           csm::WarningList *warnings) const {
 
     throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
       "Unsupported function",
       "MdisNacSensorModel::computeSensorPartials");
 }
-                                              
+
 std::vector<double> MdisNacSensorModel::computeGroundPartials(const csm::EcefCoord &groundPt) const {
 
     throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
@@ -807,7 +317,7 @@ const csm::CorrelationModel& MdisNacSensorModel::getCorrelationModel() const {
       "MdisNacSensorModel::getCorrelationModel");
 }
 
-std::vector<double> MdisNacSensorModel::getUnmodeledCrossCovariance(const csm::ImageCoord &pt1, 
+std::vector<double> MdisNacSensorModel::getUnmodeledCrossCovariance(const csm::ImageCoord &pt1,
                                                 const csm::ImageCoord &pt2) const {
 
     throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
@@ -1058,4 +568,250 @@ std::vector<double> MdisNacSensorModel::getCrossCovarianceMatrix(
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
                    "MdisNacSensorModel::getCrossCovarianceMatrix");
+}
+
+void MdisNacSensorModel::calcRotationMatrix(
+  double m[3][3]) const {
+
+  // Trigonometric functions for rotation matrix
+  double sinw = std::sin(m_omega);
+  double cosw = std::cos(m_omega);
+  double sinp = std::sin(m_phi);
+  double cosp = std::cos(m_phi);
+  double sink = std::sin(m_kappa);
+  double cosk = std::cos(m_kappa);
+
+  // Rotation matrix taken from Introduction to Mordern Photogrammetry by
+  // Edward M. Mikhail, et al., p. 373
+
+  m[0][0] = cosp * cosk;
+  m[0][1] = cosw * sink + sinw * sinp * cosk;
+  m[0][2] = sinw * sink - cosw * sinp * cosk;
+  m[1][0] = -1 * cosp * sink;
+  m[1][1] = cosw * cosk - sinw * sinp * sink;
+  m[1][2] = sinw * cosk + cosw * sinp * sink;
+  m[2][0] = sinp;
+  m[2][1] = -1 * sinw * cosp;
+  m[2][2] = cosw * cosp;
+}
+
+void MdisNacSensorModel::losEllipsoidIntersect(
+      const double& height,
+      const double& xc,
+      const double& yc,
+      const double& zc,
+      const double& xl,
+      const double& yl,
+      const double& zl,
+      double&       x,
+      double&       y,
+      double&       z ) const
+{
+   // Helper function which computes the intersection of the image ray
+   // with an expanded ellipsoid.  All vectors are in earth-centered-fixed
+   // coordinate system with origin at the center of the earth.
+
+   double ap, bp, k;
+   ap = m_majorAxis + height;
+   bp = m_minorAxis + height;
+   k = ap * ap / (bp * bp);
+
+   // Solve quadratic equation for scale factor
+   // applied to image ray to compute ground point
+
+   double at, bt, ct, quadTerm;
+   at = xl * xl + yl * yl + k * zl * zl;
+   bt = 2.0 * (xl * xc + yl * yc + k * zl * zc);
+   ct = xc * xc + yc * yc + k * zc * zc - ap * ap;
+   quadTerm = bt * bt - 4.0 * at * ct;
+
+   // If quadTerm is negative, the image ray does not
+   // intersect the ellipsoid. Setting the quadTerm to
+   // zero means solving for a point on the ray nearest
+   // the surface of the ellisoid.
+
+   if ( 0.0 > quadTerm )
+   {
+      quadTerm = 0.0;
+   }
+   double scale;
+   scale = (-bt - sqrt (quadTerm)) / (2.0 * at);
+   // Compute ground point vector
+
+   x = xc + scale * xl;
+   y = yc + scale * yl;
+   z = zc + scale * zl;
+}
+/**
+ * @brief Compute undistorted focal plane x/y.
+ *
+ * Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
+ * coordinate. The undistorted coordinates are solved for using the Newton-Raphson
+ * method for root-finding if the distortionFunction method is invoked.
+ *
+ * @param dx distorted focal plane x in millimeters
+ * @param dy distorted focal plane y in millimeters
+ * @param undistortedX The undistorted x coordinate, in millimeters.
+ * @param undistortedY The undistorted y coordinate, in millimeters.
+ *
+ * @return if the conversion was successful
+ * @todo Review the tolerance and maximum iterations of the root-
+ *       finding algorithm.
+ * @todo Review the handling of non-convergence of the root-finding
+ *       algorithm.
+ * @todo Add error handling for near-zero determinant.
+*/
+bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
+                                       double &undistortedX,
+                                       double &undistortedY ) const {
+
+
+  // Solve the distortion equation using the Newton-Raphson method.
+  // Set the error tolerance to about one millionth of a NAC pixel.
+  const double tol = 1.4E-5;
+
+  // The maximum number of iterations of the Newton-Raphson method.
+  const int maxTries = 60;
+
+  double x;
+  double y;
+  double fx;
+  double fy;
+  double Jxx;
+  double Jxy;
+  double Jyx;
+  double Jyy;
+
+  // Initial guess at the root
+  x = dx;
+  y = dy;
+
+  distortionFunction(x, y, fx, fy);
+
+  for (int count = 1; ((fabs(fx) + fabs(fy)) > tol) && (count < maxTries); count++) {
+
+    this->distortionFunction(x, y, fx, fy);
+
+    fx = dx - fx;
+    fy = dy - fy;
+
+    distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
+
+    double determinant = Jxx * Jyy - Jxy * Jyx;
+    if (determinant < 1E-6) {
+      //
+      // Near-zero determinant. Add error handling here.
+      //
+      //-- Just break out and return with no convergence
+      break;
+    }
+
+    x = x + (Jyy * fx - Jxy * fy) / determinant;
+    y = y + (Jxx * fy - Jyx * fx) / determinant;
+  }
+
+  if ( (fabs(fx) + fabs(fy)) <= tol) {
+    // The method converged to a root.
+    undistortedX = x;
+    undistortedY = y;
+
+  }
+  else {
+    // The method did not converge to a root within the maximum
+    // number of iterations. Return with no distortion.
+    undistortedX = dx;
+    undistortedY = dy;
+  }
+
+  return true;
+
+}
+
+
+/**
+ * @description Jacobian of the distortion function. The Jacobian was computed
+ * algebraically from the function described in the distortionFunction
+ * method.
+ *
+ * @param x
+ * @param y
+ * @param Jxx  Partial_xx
+ * @param Jxy  Partial_xy
+ * @param Jyx  Partial_yx
+ * @param Jyy  Partial_yy
+ */
+void MdisNacSensorModel::distortionJacobian(double x, double y, double &Jxx, double &Jxy,
+                                            double &Jyx, double &Jyy) const {
+
+  double d_dx[10];
+  d_dx[0] = 0;
+  d_dx[1] = 1;
+  d_dx[2] = 0;
+  d_dx[3] = 2 * x;
+  d_dx[4] = y;
+  d_dx[5] = 0;
+  d_dx[6] = 3 * x * x;
+  d_dx[7] = 2 * x * y;
+  d_dx[8] = y * y;
+  d_dx[9] = 0;
+  double d_dy[10];
+  d_dy[0] = 0;
+  d_dy[1] = 0;
+  d_dy[2] = 1;
+  d_dy[3] = 0;
+  d_dy[4] = x;
+  d_dy[5] = 2 * y;
+  d_dy[6] = 0;
+  d_dy[7] = x * x;
+  d_dy[8] = 2 * x * y;
+  d_dy[9] = 3 * y * y;
+
+  Jxx = 0.0;
+  Jxy = 0.0;
+  Jyx = 0.0;
+  Jyy = 0.0;
+
+  for (int i = 0; i < 10; i++) {
+    Jxx = Jxx + d_dx[i] * m_odtX[i];
+    Jxy = Jxy + d_dy[i] * m_odtX[i];
+    Jyx = Jyx + d_dx[i] * m_odtY[i];
+    Jyy = Jyy + d_dy[i] * m_odtY[i];
+  }
+
+
+}
+
+
+/**
+ * @description Compute distorted focal plane (dx,dy) coordinate  given an undistorted focal
+ * plane (ux,uy) coordinate. This describes the third order Taylor approximation to the
+ * distortion model.
+ *
+ * @param ux Undistored x
+ * @param uy Undistored y
+ * @param dx Result distorted x
+ * @param dy Result distorted y
+ */
+void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, double &dy) const {
+
+  double f[10];
+  f[0] = 1;
+  f[1] = ux;
+  f[2] = uy;
+  f[3] = ux * ux;
+  f[4] = ux * uy;
+  f[5] = uy * uy;
+  f[6] = ux * ux * ux;
+  f[7] = ux * ux * uy;
+  f[8] = ux * uy * uy;
+  f[9] = uy * uy * uy;
+
+  dx = 0.0;
+  dy = 0.0;
+
+  for (int i = 0; i < 10; i++) {
+    dx = dx + f[i] * m_odtX[i];
+    dy = dy + f[i] * m_odtY[i];
+  }
+
 }
