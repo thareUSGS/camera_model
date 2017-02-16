@@ -14,7 +14,7 @@ using json = nlohmann::json;
 
 csm::Isd *readISD(string filename) {
   json jsonFile;
-  int prec = 12;
+  int prec = 15;
   csm::Isd *isd = NULL;
 
   //Read the ISD file
@@ -183,6 +183,7 @@ void addParam(csm::Isd &isd, json::iterator it, DataType dt, int prec) {
  * @author Tyler Wilson
  */
 void printISD(const csm::Isd &isd){
+  cout.precision(15);
   const multimap<string,string> isdMap = isd.parameters();
   for (auto &i: isdMap)
     cout << i.first << " : " << i.second << endl;
