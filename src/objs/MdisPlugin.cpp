@@ -47,7 +47,7 @@ size_t MdisPlugin::getNumModels() const {
 
 
 std::string MdisPlugin::getModelName(size_t modelIndex) const {
-  
+
   return MdisNacSensorModel::_SENSOR_MODEL_NAME;
 }
 
@@ -73,11 +73,11 @@ bool MdisPlugin::canModelBeConstructedFromState(const std::string &modelName,
 bool MdisPlugin::canModelBeConstructedFromISD(const csm::Isd &imageSupportData,
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
-                                                
+
   if (modelName != MdisNacSensorModel::_SENSOR_MODEL_NAME) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -91,16 +91,16 @@ csm::Model *MdisPlugin::constructModelFromState(const std::string&modelState,
 csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
-   
-  // Check if the sensor model can be constructed from ISD given the model name 
+
+  // Check if the sensor model can be constructed from ISD given the model name
   if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
-    throw csm::Error(csm::Error::ISD_NOT_SUPPORTED, 
+    throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
                      "Sensor model support data provided is not supported by this plugin",
                      "MdisPlugin::constructModelFromISD");
   }
 
   MdisNacSensorModel *sensorModel = new MdisNacSensorModel();
-  
+
   // Keep track of necessary keywords that are missing from the ISD.
   std::vector<std::string> missingKeywords;
 
@@ -140,23 +140,7 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   if (imageSupportData.param("z_sensor_origin") == "") {
     missingKeywords.push_back("z_sensor_origin");
   }
-  
-  sensorModel->m_spacecraftVelocity[0] =
-      atof(imageSupportData.param("x_sensor_velocity").c_str());
-  sensorModel->m_spacecraftVelocity[1] =
-      atof(imageSupportData.param("y_sensor_velocity").c_str());
-  sensorModel->m_spacecraftVelocity[2] =
-      atof(imageSupportData.param("z_sensor_velocity").c_str());
-  // sensor velocity not strictly necessary?
-  
-  sensorModel->m_sunPosition[0] =
-      atof(imageSupportData.param("x_sun_position").c_str());
-  sensorModel->m_sunPosition[1] =
-      atof(imageSupportData.param("y_sun_position").c_str());
-  sensorModel->m_sunPosition[2] =
-      atof(imageSupportData.param("z_sun_position").c_str());
-  // sun position is not strictly necessary, but is required for getIlluminationDirection.
-  
+
   sensorModel->m_omega = atof(imageSupportData.param("omega").c_str());
   sensorModel->m_phi = atof(imageSupportData.param("phi").c_str());
   sensorModel->m_kappa = atof(imageSupportData.param("kappa").c_str());
@@ -179,6 +163,7 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   sensorModel->m_odtX[6] = atof(imageSupportData.param("odt_x", 6).c_str());
   sensorModel->m_odtX[7] = atof(imageSupportData.param("odt_x", 7).c_str());
   sensorModel->m_odtX[8] = atof(imageSupportData.param("odt_x", 8).c_str());
+  sensorModel->m_odtX[9] = atof(imageSupportData.param("odt_x", 9).c_str());
 
   sensorModel->m_odtY[0] = atof(imageSupportData.param("odt_y", 0).c_str());
   sensorModel->m_odtY[1] = atof(imageSupportData.param("odt_y", 1).c_str());
@@ -189,8 +174,11 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   sensorModel->m_odtY[6] = atof(imageSupportData.param("odt_y", 6).c_str());
   sensorModel->m_odtY[7] = atof(imageSupportData.param("odt_y", 7).c_str());
   sensorModel->m_odtY[8] = atof(imageSupportData.param("odt_y", 8).c_str());
+  sensorModel->m_odtY[9] = atof(imageSupportData.param("odt_y", 9).c_str());
 
-  sensorModel->m_ccdCenter = atof(imageSupportData.param("ccd_center").c_str());
+
+  sensorModel->m_ccdCenter[0] = atof(imageSupportData.param("ccd_center", 0).c_str());
+  sensorModel->m_ccdCenter[1] = atof(imageSupportData.param("ccd_center", 1).c_str());
 
   sensorModel->m_originalHalfLines = atof(imageSupportData.param("original_half_lines").c_str());
   sensorModel->m_spacecraftName = imageSupportData.param("spacecraft_name");
@@ -209,7 +197,7 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   else if (imageSupportData.param("itrans_sample", 2) == "") {
     missingKeywords.push_back("itrans_sample needs 3 elements");
   }
-  
+
   sensorModel->m_ephemerisTime = atof(imageSupportData.param("ephemeris_time").c_str());
   if (imageSupportData.param("ephemeris_time") == "") {
     missingKeywords.push_back("ephemeris_time");
@@ -234,7 +222,7 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   else if (imageSupportData.param("itrans_line", 2) == "") {
     missingKeywords.push_back("itrans_line needs 3 elements");
   }
-  
+
   sensorModel->m_nLines = atoi(imageSupportData.param("nlines").c_str());
   sensorModel->m_nSamples = atoi(imageSupportData.param("nsamples").c_str());
   if (imageSupportData.param("nlines") == "") {
@@ -243,7 +231,7 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   if (imageSupportData.param("nsamples") == "") {
     missingKeywords.push_back("nsamples");
   }
-  
+
   sensorModel->m_transY[0] = atof(imageSupportData.param("transy", 0).c_str());
   sensorModel->m_transY[1] = atof(imageSupportData.param("transy", 1).c_str());
   sensorModel->m_transY[2] = atof(imageSupportData.param("transy", 2).c_str());
@@ -256,7 +244,7 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   else if (imageSupportData.param("transy", 2) == "") {
     missingKeywords.push_back("transy");
   }
-  
+
   sensorModel->m_transX[0] = atof(imageSupportData.param("transx", 0).c_str());
   sensorModel->m_transX[1] = atof(imageSupportData.param("transx", 1).c_str());
   sensorModel->m_transX[2] = atof(imageSupportData.param("transx", 2).c_str());
@@ -269,7 +257,7 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   else if (imageSupportData.param("transx", 2) == "") {
     missingKeywords.push_back("transx");
   }
-  
+
   sensorModel->m_majorAxis = 1000 * atof(imageSupportData.param("semi_major_axis").c_str());
   if (imageSupportData.param("semi_major_axis") == "") {
     missingKeywords.push_back("semi_major_axis");
@@ -281,12 +269,12 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   else {
     sensorModel->m_minorAxis = 1000 * atof(imageSupportData.param("semi_minor_axis").c_str());
   }
-  
+
   // If we are missing necessary keywords from ISD, we cannot create a valid sensor model.
   if (missingKeywords.size() != 0) {
 
     std::string errorMessage = "ISD is missing the necessary keywords: [";
-  
+
     for (int i = 0; i < missingKeywords.size(); i++) {
       if (i == missingKeywords.size() - 1) {
         errorMessage += missingKeywords[i] + "]";
@@ -295,12 +283,12 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
         errorMessage += missingKeywords[i] + ", ";
       }
     }
-    
+
     throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
                      errorMessage,
                      "MdisPlugin::constructModelFromISD");
   }
-                                                
+
   return sensorModel;
 }
 
