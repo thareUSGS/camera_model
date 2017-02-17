@@ -302,7 +302,6 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_spacecraftPosition[3];
     double m_spacecraftVelocity[3];
     double m_sunPosition[3];
-    double m_ccdCenter;
     double m_ccdCenter[2];
     double m_line_pp;
     double m_sample_pp;
@@ -330,7 +329,7 @@ class MdisNacSensorModel : public csm::RasterGM {
                                 const double& yc, const double& zc,
                                 const double& xl, const double& yl,
                                 const double& zl,
-                                double& x,double& y, double&  z) const
+                                double& x,double& y, double&  z) const;
 };
 
 #endif

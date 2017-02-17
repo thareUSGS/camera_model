@@ -197,7 +197,7 @@ csm::EcefCoordCovar MdisNacSensorModel::imageToGround(const csm::ImageCoordCovar
       "Unsupported function",
       "MdisNacSensorModel::imageToGround");
 }
-'
+
 csm::EcefLocus MdisNacSensorModel::imageToProximateImagingLocus(const csm::ImageCoord &imagePt, 
                                                                 const csm::EcefCoord &groundPt, 
                                                                 double desiredPrecision, 
@@ -214,8 +214,8 @@ csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoo
                                                              csm::WarningList *warnings) const {
   // Find the line,sample on the focal plane (mm)
   // CSM center = 0.5, MDIS IK center = 1.0
-  double col = imagePt.samp - (m_ccdCenter - 0.5);
-  double row = imagePt.line - (m_ccdCenter - 0.5);
+  double col = imagePt.samp - (m_ccdCenter[0] - 0.5);
+  double row = imagePt.line - (m_ccdCenter[1] - 0.5);
   double focalPlaneX = m_transX[0] + m_transX[1] * col + m_transX[2] * col;
   double focalPlaneY = m_transY[0] + m_transY[1] * row + m_transY[2] * row;
   
@@ -223,15 +223,25 @@ csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoo
   double undistortedFocalPlaneX = focalPlaneX;
   double undistortedFocalPlaneY = focalPlaneY;
 
-  undistortedFocalCoords(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
+  setFocalPlane(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
   
   // Get rotation matrix and transform to a body-fixed frame
-  std::vector<double> m = createRotationMatrix(m_omega, m_phi, m_kappa);
-  std::vector<double> lookC = { undistortedFocalPlaneX, undistortedFocalPlaneY, m_focalLength };
-  std::vector<double> lookB = rotate(lookC, m);
+  double m[3][3];
+  calcRotationMatrix(m);
+  std::vector<double> lookC { undistortedFocalPlaneX, undistortedFocalPlaneY, m_focalLength };
+  std::vector<double> lookB {
+    m[0][0] * lookC[0] + m[0][1] * lookC[1] + m[0][2] * lookC[2],
+    m[1][0] * lookC[0] + m[1][1] * lookC[1] + m[1][2] * lookC[2],
+    m[2][0] * lookC[0] + m[2][1] * lookC[1] + m[2][2] * lookC[2]
+  };
   
   // Get unit vector
-  std::vector<double> lookBUnit = normalize(lookB);
+  double mag = sqrt(lookB[0] * lookB[0] + lookB[1] * lookB[1] + lookB[2] * lookB[2]);
+  std::vector<double> lookBUnit {
+    lookB[0] / mag,
+    lookB[1] / mag,
+    lookB[2] / mag
+  };
   
   return csm::EcefLocus(m_spacecraftPosition[0], m_spacecraftPosition[1], m_spacecraftPosition[2],
       lookBUnit[0], lookBUnit[1], lookBUnit[2]);

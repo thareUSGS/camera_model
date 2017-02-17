@@ -71,7 +71,11 @@
         0.0,
         0.014
     ],
-    "x_sensor_origin": 1728180,
-    "y_sensor_origin": -2088200,
-    "z_sensor_origin": 2082710
+    "x_sensor_origin": 1728181.0340792781,
+    "x_sun_position": -31648725087.588726,
+    "y_sensor_origin": -2088202.591297346,
+    "y_sun_position": -60633907522.72863,
+    "z_sensor_origin": 2082707.608992824,
+    "z_sun_position": -38729485.77334732
 }
+
