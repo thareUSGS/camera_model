@@ -227,4 +227,33 @@ TEST_F(MdisNacSensorModelTest, distortionModel2) {
 }
 
 
+TEST_F(MdisNacSensorModelTest, getImageStart) {
+  csm::ImageCoord start = mdisModel->getImageStart();
+  EXPECT_EQ(start.line, 1.0);
+  EXPECT_EQ(start.samp, 9.0);
+}
 
+
+TEST_F(MdisNacSensorModelTest, getImageSize) {
+  csm::ImageVector size = mdisModel->getImageSize();
+  EXPECT_EQ(size.line, 1024);
+  EXPECT_EQ(size.samp, 1024);
+}
+
+TEST_F(MdisNacSensorModelTest, getImageTime) {
+  csm::ImageCoord point;
+  point.samp = 500;
+  point.line = 500;
+  double time = mdisModel->getImageTime(point);
+  EXPECT_NEAR(time, 418855170.49299997, tolerance);
+}
+
+TEST_F(MdisNacSensorModelTest, getSensorPosition) {
+  csm::ImageCoord point;
+  point.samp = 500;
+  point.line = 500;
+  csm::EcefCoord position = mdisModel->getSensorPosition(point);
+  EXPECT_NEAR(position.x, 1728357.7031238307, tolerance);
+  EXPECT_NEAR(position.y, -2088409.0061042644, tolerance);
+  EXPECT_NEAR(position.z, 2082873.9280557402, tolerance);
+}
