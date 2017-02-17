@@ -707,17 +707,18 @@ csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoo
 
 csm::ImageCoord MdisNacSensorModel::getImageStart() const {
 
-    csm::ImageCoord start;
-    start.samp = m_startingDetectorSample;
-    start.line = m_startingDetectorLine;
-    return start;
+  csm::ImageCoord start;
+  start.samp = m_startingDetectorSample;
+  start.line = m_startingDetectorLine;
+  return start;
 }
 
 csm::ImageVector MdisNacSensorModel::getImageSize() const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getImageSize");
+  
+  csm::ImageVector size;
+  size.line = m_nLines;
+  size.samp = m_nSamples;
+  return size;
 }
 
 std::pair<csm::ImageCoord, csm::ImageCoord> MdisNacSensorModel::getValidImageRange() const {
