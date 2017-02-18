@@ -34,7 +34,7 @@ TEST_F(MdisNacSensorModelTest, imageToGroundCenter) {
     FAIL() << setupFixtureError;
   }
 
-  csm::ImageCoord point(512.5, 512.5);
+  csm::ImageCoord point(512., 512.);
   double height = 0.0;
   csm::EcefCoord xyz = mdisModel->imageToGround(point, height);
   double truth[] = { 1129.25*1000, -1599.26*1000, 1455.28*1000 };
@@ -82,9 +82,9 @@ TEST_F(MdisNacSensorModelTest, getSensorPositionCoord) {
   }
   
   csm::EcefCoord sensorPos = mdisModel->getSensorPosition(csm::ImageCoord(512.0, 512.0));
-  EXPECT_NEAR(1728357.70312, sensorPos.x, tolerance);
-  EXPECT_NEAR(-2088409.0061, sensorPos.y, tolerance);
-  EXPECT_NEAR(2082873.92806, sensorPos.z, tolerance);
+  EXPECT_NEAR(1728181.03, sensorPos.x, 0.01);
+  EXPECT_NEAR(-2088202.59, sensorPos.y, 0.01);
+  EXPECT_NEAR(2082707.61, sensorPos.z, 0.01);
 }
 
 TEST_F(MdisNacSensorModelTest, getSensorPositionCoordOutOfBounds) {
@@ -116,19 +116,6 @@ TEST_F(MdisNacSensorModelTest, getSensorPositionCoordOutOfBounds) {
   csm::Error);
 }
 
-// Test getSensorVelocity(ImageCoord)
-TEST_F(MdisNacSensorModelTest, getSensorVelocityCoord) {
-  // gtest #247 work-around
-  if (setupFixtureFailed) {
-    FAIL() << setupFixtureError;
-  }
-  
-  csm::EcefVector sensorVelocity = mdisModel->getSensorVelocity(csm::ImageCoord(512.0, 512.0));
-  EXPECT_NEAR(1998.29, sensorVelocity.x, 0.01);
-  EXPECT_NEAR(-1800.9, sensorVelocity.y, 0.01);
-  EXPECT_NEAR(-1674.76, sensorVelocity.z, 0.01);
-}
-
 // Test imageToProximateImagingLocus
 TEST_F(MdisNacSensorModelTest, imageToProximateImagingLocus1) {
   // gtest #247 work-around
@@ -147,9 +134,9 @@ TEST_F(MdisNacSensorModelTest, imageToProximateImagingLocus1) {
   EXPECT_EQ(spacecraftY, proximateLocus.point.y);
   EXPECT_EQ(spacecraftZ, proximateLocus.point.z);
   
-  EXPECT_NEAR(-0.601527, proximateLocus.direction.x, tolerance);
-  EXPECT_NEAR(0.491036, proximateLocus.direction.y, tolerance);
-  EXPECT_NEAR(-0.630118, proximateLocus.direction.z, tolerance);
+  EXPECT_NEAR(-0.6015027, proximateLocus.direction.x, tolerance);
+  EXPECT_NEAR(0.4910591, proximateLocus.direction.y, tolerance);
+  EXPECT_NEAR(-0.630123, proximateLocus.direction.z, tolerance);
 }
 
 TEST_F(MdisNacSensorModelTest, distortionModel2) {
