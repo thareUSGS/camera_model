@@ -41,6 +41,13 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_spacecraftPosition[1] = 0.0;
   m_spacecraftPosition[2] = 0.0;
 
+  m_startingDetectorSample = 0.0;
+  m_startingDetectorLine = 0.0;
+  m_targetName = "";
+  m_ifov = 0.0;
+  m_instrumentID = "";
+  m_focalLengthEpsilon = 0.0;
+
   m_ccdCenter[0] = 0.0;
   m_ccdCenter[1] = 0.0;
 
@@ -68,6 +75,27 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_odtY[7] = 0.0;
   m_odtY[8] = 0.0;
   m_odtY[9] = 0.0;
+
+  m_originalHalfLines = 0.0;
+  m_spacecraftName = "";
+  m_pixelPitch = 0.0; 
+    
+  m_iTransS[0] = 0.0;
+  m_iTransS[1] = 0.0;
+  m_iTransS[2] = 0.0;
+  
+  m_iTransL[0] = 0.0;
+  m_iTransL[1] = 0.0;
+  m_iTransL[2] = 0.0;
+
+  m_ephemerisTime = 0.0;
+  m_originalHalfSamples = 0.0;
+  m_boresight[0] = 0.0;
+  m_boresight[1] = 0.0;
+  m_boresight[2] = 0.0;
+
+  m_nLines = 0;
+  m_nSamples = 0;
 }
 
 
@@ -214,16 +242,18 @@ csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoo
 
 csm::ImageCoord MdisNacSensorModel::getImageStart() const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getImageStart");
+  csm::ImageCoord start;
+  start.samp = m_startingDetectorSample;
+  start.line = m_startingDetectorLine;
+  return start;
 }
 
 csm::ImageVector MdisNacSensorModel::getImageSize() const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getImageSize");
+  
+  csm::ImageVector size;
+  size.line = m_nLines;
+  size.samp = m_nSamples;
+  return size;
 }
 
 std::pair<csm::ImageCoord, csm::ImageCoord> MdisNacSensorModel::getValidImageRange() const {
@@ -248,17 +278,40 @@ csm::EcefVector MdisNacSensorModel::getIlluminationDirection(const csm::EcefCoor
 }
 
 double MdisNacSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getImageTime");
+  
+  // check if the image point is in range
+  if (imagePt.samp >= m_startingDetectorSample && 
+      imagePt.samp <= (m_startingDetectorSample + m_nSamples) &&
+      imagePt.line >= m_startingDetectorSample &&
+      imagePt.line <= (m_startingDetectorLine + m_nLines)) {
+    return m_ephemerisTime;
+  }
+  else {
+    throw csm::Error(csm::Error::BOUNDS,
+                     "Image Coordinate out of Bounds",
+                     "MdisNacSensorModel::getImageTime");
+  }
 }
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(const csm::ImageCoord &imagePt) const {
+  
+  // check if the image point is in range
+  if (imagePt.samp >= m_startingDetectorSample && 
+      imagePt.samp <= (m_startingDetectorSample + m_nSamples) &&
+      imagePt.line >= m_startingDetectorSample &&
+      imagePt.line <= (m_startingDetectorLine + m_nLines)) {
+    csm::EcefCoord sensorPosition;
+    sensorPosition.x = m_spacecraftPosition[0];
+    sensorPosition.y = m_spacecraftPosition[1];
+    sensorPosition.z = m_spacecraftPosition[2];
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getSensorPosition");
+    return sensorPosition;
+  }
+  else {
+    throw csm::Error(csm::Error::BOUNDS,
+                     "Image Coordinate out of Bounds",
+                     "MdisNacSensorModel::getSensorPosition");
+  }
 }
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(double time) const {
