@@ -47,32 +47,6 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_ifov = 0.0;
   m_instrumentID = "";
   m_focalLengthEpsilon = 0.0;
-  
-
-#if 0
-  //NAC coefficients 
-  m_odtX[0]=0.0;
-  m_odtX[1]=1.0018542696237999756;
-  m_odtX[2]=-0.0;
-  m_odtX[3]=-0.0;
-  m_odtX[4]=-0.00050944404749411103042;
-  m_odtX[5]=0.0;
-  m_odtX[6]=1.0040104714688599425e-05;
-  m_odtX[7]=0.0;
-  m_odtX[8]=1.0040104714688599425e-05;
-  m_odtX[9]=0.0;
-
-  m_odtY[0]=0.0;
-  m_odtY[1]=0.0;
-  m_odtY[2]=1.0;
-  m_odtY[3]=0.00090600105949967496381;
-  m_odtY[4]=0.0;
-  m_odtY[5]=0.00035748426266207598964;
-  m_odtY[6]=0.0;
-  m_odtY[7]=1.0040104714688599425e-05;
-  m_odtY[8]=0.0;
-  m_odtY[9]=1.0040104714688599425e-05;
-#endif
 
   m_ccdCenter[0] = 0.0;
   m_ccdCenter[1] = 0.0;
