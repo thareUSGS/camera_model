@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 #include <csm/Error.h>
 
@@ -40,6 +41,21 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_spacecraftPosition[0] = 0.0;
   m_spacecraftPosition[1] = 0.0;
   m_spacecraftPosition[2] = 0.0;
+ 
+  m_spacecraftVelocity[0] = 0.0;
+  m_spacecraftVelocity[1] = 0.0;
+  m_spacecraftVelocity[2] = 0.0;
+  
+  m_sunPosition[0] = 0.0;
+  m_sunPosition[1] = 0.0;
+  m_sunPosition[2] = 0.0;
+
+  m_startingDetectorSample = 0.0;
+  m_startingDetectorLine = 0.0;
+  m_targetName = "";
+  m_ifov = 0.0;
+  m_instrumentID = "";
+  m_focalLengthEpsilon = 0.0;
 
   m_ccdCenter[0] = 0.0;
   m_ccdCenter[1] = 0.0;
@@ -68,6 +84,27 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_odtY[7] = 0.0;
   m_odtY[8] = 0.0;
   m_odtY[9] = 0.0;
+
+  m_originalHalfLines = 0.0;
+  m_spacecraftName = "";
+  m_pixelPitch = 0.0; 
+    
+  m_iTransS[0] = 0.0;
+  m_iTransS[1] = 0.0;
+  m_iTransS[2] = 0.0;
+  
+  m_iTransL[0] = 0.0;
+  m_iTransL[1] = 0.0;
+  m_iTransL[2] = 0.0;
+
+  m_ephemerisTime = 0.0;
+  m_originalHalfSamples = 0.0;
+  m_boresight[0] = 0.0;
+  m_boresight[1] = 0.0;
+  m_boresight[2] = 0.0;
+
+  m_nLines = 0;
+  m_nSamples = 0;
 }
 
 
@@ -189,41 +226,70 @@ csm::EcefCoordCovar MdisNacSensorModel::imageToGround(const csm::ImageCoordCovar
       "MdisNacSensorModel::imageToGround");
 }
 
-csm::EcefLocus MdisNacSensorModel::imageToProximateImagingLocus(const csm::ImageCoord &imagePt,
-                                            const csm::EcefCoord &groundPt,
-                                            double desiredPrecision,
-                                            double *achievedPrecision,
-                                            csm::WarningList *warnings) const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::imageToProximateImagingLocus");
+csm::EcefLocus MdisNacSensorModel::imageToProximateImagingLocus(const csm::ImageCoord &imagePt, 
+                                                                const csm::EcefCoord &groundPt, 
+                                                                double desiredPrecision, 
+                                                                double *achievedPrecision, 
+                                                                csm::WarningList *warnings) const {
+  // Ignore the ground point?
+  return imageToRemoteImagingLocus(imagePt);
 }
+             
+             
+csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoord &imagePt, 
+                                                             double desiredPrecision, 
+                                                             double *achievedPrecision, 
+                                                             csm::WarningList *warnings) const {
+  // Find the line,sample on the focal plane (mm)
+  // CSM center = 0.5, MDIS IK center = 1.0
+  double col = imagePt.samp - (m_ccdCenter[0] - 0.5);
+  double row = imagePt.line - (m_ccdCenter[1] - 0.5);
+  double focalPlaneX = m_transX[0] + m_transX[1] * col + m_transX[2] * col;
+  double focalPlaneY = m_transY[0] + m_transY[1] * row + m_transY[2] * row;
+  
+  // Distort
+  double undistortedFocalPlaneX = focalPlaneX;
+  double undistortedFocalPlaneY = focalPlaneY;
 
-
-csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoord &imagePt,
-                                         double desiredPrecision,
-                                         double *achievedPrecision,
-                                         csm::WarningList *warnings) const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::imageToRemoteImagingLocus");
+  setFocalPlane(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
+  
+  // Get rotation matrix and transform to a body-fixed frame
+  double m[3][3];
+  calcRotationMatrix(m);
+  std::vector<double> lookC { undistortedFocalPlaneX, undistortedFocalPlaneY, m_focalLength };
+  std::vector<double> lookB {
+    m[0][0] * lookC[0] + m[0][1] * lookC[1] + m[0][2] * lookC[2],
+    m[1][0] * lookC[0] + m[1][1] * lookC[1] + m[1][2] * lookC[2],
+    m[2][0] * lookC[0] + m[2][1] * lookC[1] + m[2][2] * lookC[2]
+  };
+  
+  // Get unit vector
+  double mag = sqrt(lookB[0] * lookB[0] + lookB[1] * lookB[1] + lookB[2] * lookB[2]);
+  std::vector<double> lookBUnit {
+    lookB[0] / mag,
+    lookB[1] / mag,
+    lookB[2] / mag
+  };
+  
+  return csm::EcefLocus(m_spacecraftPosition[0], m_spacecraftPosition[1], m_spacecraftPosition[2],
+      lookBUnit[0], lookBUnit[1], lookBUnit[2]);
 }
 
 
 csm::ImageCoord MdisNacSensorModel::getImageStart() const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getImageStart");
+  csm::ImageCoord start;
+  start.samp = m_startingDetectorSample;
+  start.line = m_startingDetectorLine;
+  return start;
 }
 
 csm::ImageVector MdisNacSensorModel::getImageSize() const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getImageSize");
+  
+  csm::ImageVector size;
+  size.line = m_nLines;
+  size.samp = m_nSamples;
+  return size;
 }
 
 std::pair<csm::ImageCoord, csm::ImageCoord> MdisNacSensorModel::getValidImageRange() const {
@@ -241,24 +307,48 @@ std::pair<double, double> MdisNacSensorModel::getValidHeightRange() const {
 }
 
 csm::EcefVector MdisNacSensorModel::getIlluminationDirection(const csm::EcefCoord &groundPt) const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getIlluminationDirection");
+  // ground (body-fixed) - sun (body-fixed) gives us the illumination direction.
+  return csm::EcefVector { 
+    groundPt.x - m_sunPosition[0],
+    groundPt.y - m_sunPosition[1],
+    groundPt.z - m_sunPosition[2]
+  };
 }
 
 double MdisNacSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getImageTime");
+  
+  // check if the image point is in range
+  if (imagePt.samp >= m_startingDetectorSample && 
+      imagePt.samp <= (m_startingDetectorSample + m_nSamples) &&
+      imagePt.line >= m_startingDetectorSample &&
+      imagePt.line <= (m_startingDetectorLine + m_nLines)) {
+    return m_ephemerisTime;
+  }
+  else {
+    throw csm::Error(csm::Error::BOUNDS,
+                     "Image Coordinate out of Bounds",
+                     "MdisNacSensorModel::getImageTime");
+  }
 }
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(const csm::ImageCoord &imagePt) const {
+  // check if the image point is in range
+  if (imagePt.samp >= m_startingDetectorSample && 
+      imagePt.samp <= (m_startingDetectorSample + m_nSamples) &&
+      imagePt.line >= m_startingDetectorSample &&
+      imagePt.line <= (m_startingDetectorLine + m_nLines)) {
+    csm::EcefCoord sensorPosition;
+    sensorPosition.x = m_spacecraftPosition[0];
+    sensorPosition.y = m_spacecraftPosition[1];
+    sensorPosition.z = m_spacecraftPosition[2];
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getSensorPosition");
+    return sensorPosition;
+  }
+  else {
+    throw csm::Error(csm::Error::BOUNDS,
+                     "Image Coordinate out of Bounds",
+                     "MdisNacSensorModel::getSensorPosition");
+  }
 }
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(double time) const {
@@ -269,10 +359,20 @@ csm::EcefCoord MdisNacSensorModel::getSensorPosition(double time) const {
 }
 
 csm::EcefVector MdisNacSensorModel::getSensorVelocity(const csm::ImageCoord &imagePt) const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getSensorVelocity");
+  // Make sure the passed coordinate is with the image dimensions.
+  if (imagePt.samp < 0.0 || imagePt.samp > m_nSamples ||
+      imagePt.line < 0.0 || imagePt.line > m_nLines) {
+    std::stringstream ss;
+    ss << "Image coordinate (" << imagePt.line << ", " << imagePt.samp << ") out of bounds.";
+    throw csm::Error(csm::Error::BOUNDS, ss.str(), "MdisNacSensorModel::getSensorVelocity");
+  }
+  
+  // Since this is a frame, just return the sensor velocity the ISD gave us.
+  return csm::EcefVector {
+    m_spacecraftVelocity[0],
+    m_spacecraftVelocity[1],
+    m_spacecraftVelocity[2]
+  };
 }
 
 csm::EcefVector MdisNacSensorModel::getSensorVelocity(double time) const {

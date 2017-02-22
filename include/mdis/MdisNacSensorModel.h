@@ -65,21 +65,48 @@ class MdisNacSensorModel : public csm::RasterGM {
 
     virtual std::pair<double, double> getValidHeightRange() const;
 
+    /**
+     * Calculates the illumination vector (body-fixed, meters) from the sun to the given ground
+     * point.
+     * 
+     * @param groundPt The ground point to find the illumination vector to.
+     * 
+     * @return @b csm::EcefVector Returns the illumination vector from the sun to the ground point.
+     */
     virtual csm::EcefVector getIlluminationDirection(const csm::EcefCoord &groundPt) const;
 
     virtual double getImageTime(const csm::ImageCoord &imagePt) const;
-
+  
+    /**
+     * Determines the body-fixed sensor position for the given image coordinate.
+     * 
+     * @param imagePt Image coordinate to find the sensor position for.
+     * 
+     * @return @b csm::EcefCoord Returns the body-fixed sensor position.
+     * 
+     * @throw csm::Error::BOUNDS "Image coordinate () out of bounds."
+     */
     virtual csm::EcefCoord getSensorPosition(const csm::ImageCoord &imagePt) const;
 
-    virtual csm::EcefCoord getSensorPosition(double time) const;
+    virtual csm::EcefCoord getSensorPosition(double time) const;                                                                                      
 
+    /**
+     * Determines the velocity of the sensor for the given image coordinate (in body-fixed frame).
+     * 
+     * @param imagePt Image coordinate to find the sensor position for.
+     * 
+     * @return @b csm::EcefVector Returns the sensor velocity in body-fixed frame.
+     * 
+     * @throw csm::Error::BOUNDS "Image coordinate () out of bounds."
+     */
+                        
     virtual csm::EcefVector getSensorVelocity(const csm::ImageCoord &imagePt) const;
 
     virtual csm::EcefVector getSensorVelocity(double time) const;
 
     virtual csm::RasterGM::SensorPartials computeSensorPartials(int index,
                                                                 const csm::EcefCoord &groundPt,
-                                                                double desiredPrecision=0.001,
+                                                                double desiredPrecision=0.001,                                        
                                                                 double *achievedPrecision=NULL,
                                                                 csm::WarningList *warnings=NULL) const;
 
@@ -273,6 +300,8 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_kappa;
     double m_focalLength;
     double m_spacecraftPosition[3];
+    double m_spacecraftVelocity[3];
+    double m_sunPosition[3];
     double m_ccdCenter[2];
     double m_line_pp;
     double m_sample_pp;
@@ -294,7 +323,7 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_boresight[3];
     int m_nLines;
     int m_nSamples;
-
+  
     void calcRotationMatrix(double m[3][3]) const;
     void losEllipsoidIntersect (const double& height,const double& xc,
                                 const double& yc, const double& zc,
