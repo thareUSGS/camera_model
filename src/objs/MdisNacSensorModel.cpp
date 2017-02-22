@@ -140,17 +140,17 @@ calcRotationMatrix(m);
 // Sensor position
 double undistortedx, undistortedy, denom;
 denom = m[0][2] * xo + m[1][2] * yo + m[2][2] * zo;
-undistortedx = (-f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_sample_pp;  //m_sample_pp like this assumes mm
-undistortedy = (-f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_line_pp;
+undistortedx = (f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_sample_pp;  //m_sample_pp like this assumes mm
+undistortedy = (f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_line_pp;
 
 // Apply the distortion to the line/sample location and then convert back to line/sample
 double distortedx, distortedy;
-setFocalPlane(undistortedx, undistortedy, distortedx, distortedy);
+distortionFunction(undistortedx, undistortedy, distortedx, distortedy);
 
 //Convert distorted mm into line/sample
 double sample, line;
-sample = distortedx / m_transX[1] + m_ccdCenter[0];
-line = distortedy / m_transY[2] + m_ccdCenter[1];
+sample = m_iTransS[0] + m_iTransS[1] * distortedx + m_iTransS[2] * distortedx + m_ccdCenter[0] - 0.5;
+line =   m_iTransL[0] + m_iTransL[1] * distortedy + m_iTransL[2] * distortedy + m_ccdCenter[0] - 0.5;
 
 return csm::ImageCoord(line, sample);
 }
@@ -187,23 +187,23 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
 
   //Convert from the pixel space into the metric space
   double optical_center_x, optical_center_y, x_camera, y_camera;
-  optical_center_x = m_ccdCenter[0];
-  optical_center_y = m_ccdCenter[1]; //This should be a vector from the ISD
-  y_camera = (lo - optical_center_y) / m_iTransL[2];
-  x_camera = (so - optical_center_x) / m_iTransS[1];
+  optical_center_x = m_ccdCenter[0] - 0.5;
+  optical_center_y = m_ccdCenter[1] - 0.5;
+  y_camera = m_transY[0] + m_transY[1] * (lo - optical_center_y) + m_transY[2] * (lo - optical_center_y);
+  x_camera = m_transX[0] + m_transX[1] * (so - optical_center_x) + m_transX[2] * (so - optical_center_x);
 
-  // Apply the distasdortion model
-  double distorted_cameraX, distorted_cameraY;
-  distortionFunction(y_camera, x_camera, distorted_cameraY, distorted_cameraX);
+  // Apply the distortion model (remove distortion)
+  double undistorted_cameraX, undistorted_cameraY = 0.0;
+  setFocalPlane(x_camera, y_camera, undistorted_cameraX, undistorted_cameraY);
 
   //Now back from distorted mm to pixels
-  double dx, dy; //distorted line and sample
-  dx = distorted_cameraX;
-  dy = distorted_cameraY;
+  double udx, udy; //distorted line and sample
+  udx = undistorted_cameraX;
+  udy = undistorted_cameraY;
 
-  xl = m[0][0] * dx + m[0][1] * dy - m[0][2] * -m_focalLength;
-  yl = m[1][0] * dx + m[1][1] * dy - m[1][2] * -m_focalLength;
-  zl = m[2][0] * dx + m[2][1] * dy - m[2][2] * -m_focalLength;
+  xl = m[0][0] * udx + m[0][1] * udy - m[0][2] * -m_focalLength;
+  yl = m[1][0] * udx + m[1][1] * udy - m[1][2] * -m_focalLength;
+  zl = m[2][0] * udx + m[2][1] * udy - m[2][2] * -m_focalLength;
 
   double x, y, z;
   double xc, yc, zc;
@@ -908,10 +908,9 @@ void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, do
 
   dx = 0.0;
   dy = 0.0;
-
+  
   for (int i = 0; i < 10; i++) {
     dx = dx + f[i] * m_odtX[i];
     dy = dy + f[i] * m_odtY[i];
   }
-
 }
