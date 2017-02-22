@@ -39,8 +39,7 @@ class MdisNacSensorModelTest : public ::testing::Test {
         std::cout << "dataFile: " << dataFile << std::endl;
       }
       isd = readISD(dataFile);
-      // printISD(*isd);
-
+      
       // Make sure the isd was read correctly.
       if (isd == nullptr) {
         setupFixtureFailed = true;
@@ -49,6 +48,8 @@ class MdisNacSensorModelTest : public ::testing::Test {
         setupFixtureError = ss.str();
         return;
       }
+      
+      // printISD(*isd);
 
       // Create a model from the ISD so we can test a valid image.
       std::string modelName = MdisNacSensorModel::_SENSOR_MODEL_NAME;

@@ -21,7 +21,14 @@
 
 using namespace std;
 
+const double PI = 3.14159265358979323846;
+
 void cubeArray(vector<vector<float> > *cube, GDALRasterBand *poBand);
+double computeAngle(const std::vector<double> &v1, const std::vector<double> &v2);
+double emissionAngle(const csm::EcefCoord &groundPt,
+                     const csm::EcefVector &sensorLook);
+double incidenceAngle(const csm::EcefCoord &groundPt,
+                      const csm::EcefVector &illuminationDirection);
 void writeCSV(const string &csvFile,
               const vector<string> &csvHeaders,
               const vector< vector<float> > &cubeData,
@@ -29,7 +36,9 @@ void writeCSV(const string &csvFile,
 void writeCSV(const string &csvFilename,
               const vector<string> &csvHeaders,
               const vector< vector<float> > &cubeData,
-              const vector< vector< vector<float> > > &latLonPoints);
+              const vector< vector< vector<float> > > &latLonPoints,
+              const vector< vector<double> > &emissionAngles,
+              const vector< vector<double> > &incidenceAngles);
 
 int main(int argc, char *argv[]) {
   
@@ -137,14 +146,29 @@ int main(int argc, char *argv[]) {
     
     // Get ground X,Y,Z for each pixel in image
     vector< vector<csm::EcefCoord> > groundPoints;
+    // Get the emission and incidence angles for these XYZ's
+    vector< vector<double> > emissionAngles, incidenceAngles;
+    
     for (int line = 0; line < cubeMatrix.size(); line++) {
       vector<csm::EcefCoord> groundLine;
+      vector<double> emaLine, inaLine;
       
       for (int sample = 0; sample < cubeMatrix[line].size(); sample++) {
         csm::ImageCoord imagePoint(line + 1, sample + 1);
-        groundLine.push_back(model->imageToGround(imagePoint, 0.0));
+        csm::EcefCoord groundPoint(model->imageToGround(imagePoint, 0.0));
+        groundLine.push_back(groundPoint);
+        
+        // Calculate the emission angle using CSM's getSensorPosition
+        csm::EcefLocus sensorLook(model->imageToRemoteImagingLocus(imagePoint));
+        emaLine.push_back(emissionAngle(groundPoint, sensorLook.direction));
+        
+        // Calculate the incidence angle using CSM's illumination vector.
+        csm::EcefVector illumination(model->getIlluminationDirection(groundPoint));
+        inaLine.push_back(incidenceAngle(groundPoint, illumination));
       }
       groundPoints.push_back(groundLine);
+      emissionAngles.push_back(emaLine);
+      incidenceAngles.push_back(inaLine);
     }
     
     // calculate the radius
@@ -174,8 +198,10 @@ int main(int argc, char *argv[]) {
         
     // Write to csv file
     string csvFilename("ground.csv");
-    vector<string> csvHeaders { "Line", "Sample", "DN", "Latitude", "Longitude" };
-    writeCSV(csvFilename, csvHeaders, cubeMatrix, latLonPoints);
+    vector<string> csvHeaders { 
+          "Line", "Sample", "DN", "Latitude", "Longitude", "Emission", "Incidence"
+    };
+    writeCSV(csvFilename, csvHeaders, cubeMatrix, latLonPoints, emissionAngles, incidenceAngles);
 
   }  //end else
  
@@ -204,6 +230,75 @@ void cubeArray(vector <vector<float> > *cube,GDALRasterBand *poBand) {
     tempVector.clear();
     CPLFree(pafScanline);
   }
+}
+
+
+/**
+ * Computes an angle between two vectors by using the definition of the dot product.
+ * 
+ * @param v1 First vector.
+ * @param v2 Second vector.
+ * 
+ * @return @b double Returns the angle between two vectors (in degrees).
+ */
+double computeAngle(const std::vector<double> &v1, const std::vector<double> &v2) {
+  // Recall: dot(v1, v2) = ||v1|| * ||v2|| * cos(theta)
+  double dotProduct = v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+  double magnitude = sqrt(v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2]) *
+                     sqrt(v2[0] * v2[0] + v2[1] * v2[1] + v2[2] * v2[2]);
+  double theta = acos(dotProduct / magnitude);
+  
+  // Convert to degrees.
+  return theta * (180 / PI);
+}
+
+
+/**
+ * Calculates the emission angle (degrees) between a ground point's normal and the sensor's look
+ * direction.
+ * 
+ * @param groundPt Body-fixed ground point to use in calculation.
+ * @param sensorLook Body-fixed sensor look direction.
+ * 
+ * @return @b double Returns the emission angle (in degrees) between ground point normal and the
+ *                   spacecraft position.
+ */
+double emissionAngle(const csm::EcefCoord &groundPt,
+                     const csm::EcefVector &sensorLook) {
+  // Reverse the sensor look direction to get vector from ground to sensor.
+  std::vector<double> sensor { 
+    -1 * sensorLook.x,
+    -1 * sensorLook.y,
+    -1 * sensorLook.z 
+  };
+  
+  std::vector<double> ground { groundPt.x, groundPt.y, groundPt.z };
+  return computeAngle(ground, sensor);
+}
+
+
+/**
+ * Calculates the incidence angle (degrees) between a ground point's normal and the illumination
+ * vector from the sun.
+ * 
+ * @param groundPt Body-fixed ground point to use in calculation.
+ * @param illuminationDirection Body-fixed illumination vector of the sun.
+ * 
+ * @return @b double Returns the incidence angle (in degrees) between ground point normal and the
+ *                   illumination vector.
+ */
+double incidenceAngle(const csm::EcefCoord &groundPt,
+                      const csm::EcefVector &illuminationDirection) {
+  // Reverse the illumination to get vector from ground point to sun.
+  std::vector<double> sun {
+    -1 * illuminationDirection.x,
+    -1 * illuminationDirection.y,
+    -1 * illuminationDirection.z
+  };
+  
+  // Solve for the angle between the vector from surface to sun and the ground position.
+  std::vector<double> ground { groundPt.x, groundPt.y, groundPt.z };
+  return computeAngle(ground, sun);
 }
 
 
@@ -264,7 +359,9 @@ void writeCSV(const string &csvFilename,
 void writeCSV(const string &csvFilename,
               const vector<string> &csvHeaders,
               const vector< vector<float> > &cubeData,
-              const vector< vector< vector<float> > > &latLonPoints) {
+              const vector< vector< vector<float> > > &latLonPoints,
+              const vector< vector<double> > &emissionAngles,
+              const vector< vector<double> > &incidenceAngles) {
   
   ofstream csvFile(csvFilename);
   if (csvFile.is_open()) {
@@ -282,8 +379,12 @@ void writeCSV(const string &csvFilename,
       
       for (int sample = 0; sample < cubeData[line].size(); sample++) {
         vector<float> latLon = latLonPoints[line][sample];
-        csvFile << line + 1 << ", " << sample + 1 << ", " << cubeData[line][sample] << ", "
-                << latLon[0] << ", " << latLon[1] << "\n";
+        csvFile << line + 1 << ", "
+                << sample + 1 << ", "
+                << cubeData[line][sample] << ", "
+                << latLon[0] << ", " << latLon[1] << ", "
+                << emissionAngles[line][sample] << ", "
+                << incidenceAngles[line][sample] << "\n";
       }
     }
   }
