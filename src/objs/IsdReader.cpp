@@ -1,20 +1,33 @@
 #include <IsdReader.h>
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <map>
-#include <string>
 #include <sstream>
+#include <string>
 
-#include <json/json.hpp>
 #include <csm/Isd.h>
+#include <json/json.hpp>
 
 using namespace std;
 using json = nlohmann::json;
 
+/**
+ * @internal
+ *   @todo This should be converted to a C++ class.
+ */
+
+/**
+ * Reads in a JSON formatted file, parses it, and creates a new csm::Isd in memory.
+ * 
+ * @param filename JSON file to read.
+ * 
+ * @return @b csm::Isd* Returns a pointer to the dynamically allocated csm::Isd.
+ *                      Returns a null pointer if unsuccessful.
+ */
 csm::Isd *readISD(string filename) {
   json jsonFile;
-  int prec = 12;
+  int prec = 15;
   csm::Isd *isd = NULL;
 
   //Read the ISD file
@@ -29,10 +42,13 @@ csm::Isd *readISD(string filename) {
     return NULL;
   }
 
+  // File successfully opened
   else {
     isd = new csm::Isd();
     file >> jsonFile;
     isd->setFilename(filename);
+    
+    // Parse the JSON and populate the ISD
     for (json::iterator i = jsonFile.begin(); i != jsonFile.end(); i++) {        
         if (i.value().is_array()){
           DataType arrayType = checkType(i.value()[0]);
@@ -51,9 +67,12 @@ csm::Isd *readISD(string filename) {
 
 
 /**
- * @brief checkType
- * @param obj
- * @return An enum DataType value indicating what the primitive data type of obj is
+ * Checks the type of the currently parsed JSON token.
+ * 
+ * @param obj The json::value_type currently being parsed.
+ * 
+ * @return An enum DataType value indicating what the primitive data type of obj is.
+ * 
  * @author Tyler Wilson
  */
 DataType checkType(json::value_type obj){
@@ -83,10 +102,11 @@ DataType checkType(json::value_type obj){
 
 
 /**
- * @brief addParam:
- * @param isd A reference to the ISD object
+ * Adds a parameter and its value to the ISD object being created.
+ * 
+ * @param isd A reference to the ISD object being created.
  * @param it  The iterator to the json file which iterates over the keywords.
- * @param dt  The enum DataType value
+ * @param dt  The enum DataType value of the value.
  * @param prec The # of decimal places to be written to the ISD (if the value is a float)
  * @author Tyler Wilson
  */
@@ -178,11 +198,14 @@ void addParam(csm::Isd &isd, json::iterator it, DataType dt, int prec) {
 
 
 /**
- * @brief printISD  Display the keyword:value pairs of a CSM::ISD object
- * @param isd
+ * Prints the ISD to standard output.
+ * 
+ * @brief printISD Display the keyword:value pairs of a CSM::ISD object
+ * @param isd Reference to the ISD to output.
  * @author Tyler Wilson
  */
 void printISD(const csm::Isd &isd){
+  cout.precision(15);
   const multimap<string,string> isdMap = isd.parameters();
   for (auto &i: isdMap)
     cout << i.first << " : " << i.second << endl;
