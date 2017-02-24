@@ -187,3 +187,28 @@ TEST_F(MdisNacSensorModelTest, getSensorPosition) {
   EXPECT_NEAR(position.z, 2082873.9280557402, tolerance);
 }
 
+
+TEST_F(MdisNacSensorModelTest, getNumParameters) {
+  EXPECT_EQ(mdisModel->getNumParameters(), 6);
+}
+
+
+TEST_F(MdisNacSensorModelTest, getParametersName) {
+  EXPECT_EQ(mdisModel->getParameterName(0), "X Sensor Position (m)");
+  EXPECT_EQ(mdisModel->getParameterName(3), "Omega (radians)");
+}
+
+
+TEST_F(MdisNacSensorModelTest, getParameterUnits) {
+  EXPECT_EQ(mdisModel->getParameterUnits(0), "m");
+  EXPECT_EQ(mdisModel->getParameterUnits(3), "radians");
+}
+
+
+TEST_F(MdisNacSensorModelTest, testSetGetParameterValue) {
+  mdisModel->setParameterValue(3, 7.5);
+  EXPECT_NEAR(mdisModel->getParameterValue(3), 7.5, tolerance);
+  mdisModel->setParameterValue(3, 2.25613869898165);
+  EXPECT_NEAR(mdisModel->getParameterValue(3), 2.25613869898165, tolerance);
+}
+
