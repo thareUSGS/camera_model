@@ -113,12 +113,24 @@ MdisNacSensorModel::MdisNacSensorModel() {
   for (int i = 0; i < m_numParameters; i++) {
     m_currentParameterValue[i] = 0.0;
   }
+
+  m_currentParameterCovariance.assign(m_numParameters*m_numParameters,0.0);
+  m_noAdjustments.assign(m_numParameters,0.0);
 }
 
 
 MdisNacSensorModel::~MdisNacSensorModel() {}
 
 
+/**
+ * @brief MdisNacSensorModel::groundToImage
+ * @param groundPt
+ * @param desiredPrecision
+ * @param achievedPrecision
+ * @param warnings
+ * @return Returns <line, sample> coordinate in the image corresponding to the ground point
+ * without bundle adjustment correction.
+ */
 csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt,
                               double desiredPrecision,
                               double *achievedPrecision,
@@ -415,15 +427,41 @@ csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int inde
 }
 
 
-csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index, const csm::ImageCoord &imagePt,
+/**
+ * @brief MdisNacSensorModel::computeSensorPartials
+ * @param index
+ * @param imagePt
+ * @param groundPt
+ * @param desiredPrecision
+ * @param achievedPrecision
+ * @param warnings
+ * @return The partial derivatives in the line,sample directions.
+ *
+ * Research:  We should investigate using a central difference scheme to approximate
+ * the partials.  It is more accurate, but it might be costlier calculation-wise.
+ *
+ */
+csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index,
+                                          const csm::ImageCoord &imagePt,
                                           const csm::EcefCoord &groundPt,
                                           double desiredPrecision,
                                           double *achievedPrecision,
                                           csm::WarningList *warnings) const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::computeSensorPartials");
+  const double delta = 1.0;
+  std::vector<double> adjustments(m_nParameters, 0.0);
+  adjustments[index] = delta;
+
+  csm::ImageCoord imagePt1 = groundToImage(groundPt,adjustments,desiredPrecision,achievedPrecision);
+
+  cout << "Img1 line:  " << imagePt1.line << " ,Img1 sample:  " << imagePt1.samp << endl;
+  csm::RasterGM::SensorPartials partials;
+
+  partials.first = (imagePt1.line - imagePt.line)/delta;
+  partials.second = (imagePt1.samp - imagePt.samp)/delta;
+
+  return partials;
+
 }
 
 
@@ -614,13 +652,14 @@ csm::SharingCriteria MdisNacSensorModel::getParameterSharingCriteria(int index) 
 
 
 double MdisNacSensorModel::getParameterValue(int index) const {
-  
+
   return m_currentParameterValue[index];
+
 }
 
 
 void MdisNacSensorModel::setParameterValue(int index, double value) {
-  
+
   m_currentParameterValue[index] = value;
 }
 
@@ -694,18 +733,15 @@ std::vector<double> MdisNacSensorModel::getCrossCovarianceMatrix(
 
 
 void MdisNacSensorModel::calcRotationMatrix(
-  double m[3][3]) const {
+  double m[3][3], const std::vector<double> &adjustments) const {
 
   // Trigonometric functions for rotation matrix
-  double sinw = std::sin(m_currentParameterValue[3]);
-  double cosw = std::cos(m_currentParameterValue[3]);
-  double sinp = std::sin(m_currentParameterValue[4]);
-  double cosp = std::cos(m_currentParameterValue[4]);
-  double sink = std::sin(m_currentParameterValue[5]);
-  double cosk = std::cos(m_currentParameterValue[5]);
-
-  // Rotation matrix taken from Introduction to Mordern Photogrammetry by
-  // Edward M. Mikhail, et al., p. 373
+  double sinw = std::sin(getValue(3,adjustments));
+  double cosw = std::cos(getValue(3,adjustments));
+  double sinp = std::sin(getValue(4,adjustments));
+  double cosp = std::cos(getValue(4,adjustments));
+  double sink = std::sin(getValue(5,adjustments));
+  double cosk = std::cos(getValue(5,adjustments));
 
   m[0][0] = cosp * cosk;
   m[0][1] = cosw * sink + sinw * sinp * cosk;
@@ -908,6 +944,7 @@ void MdisNacSensorModel::distortionJacobian(double x, double y, double &Jxx, dou
 }
 
 
+
 /**
  * @description Compute distorted focal plane (dx,dy) coordinate  given an undistorted focal
  * plane (ux,uy) coordinate. This describes the third order Taylor approximation to the
@@ -940,3 +977,13 @@ void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, do
     dy = dy + f[i] * m_odtY[i];
   }
 }
+
+/***** Helper Functions *****/
+
+double MdisNacSensorModel::getValue(
+   int index,
+   const std::vector<double> &adjustments) const
+{
+   return m_currentParameterValue[index] + adjustments[index];
+}
+
