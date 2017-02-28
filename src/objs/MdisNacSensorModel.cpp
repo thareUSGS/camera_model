@@ -105,55 +105,105 @@ MdisNacSensorModel::MdisNacSensorModel() {
 
   m_nLines = 0;
   m_nSamples = 0;
+  m_nParameters = 6;
+
+
+  m_currentParameterValue.assign(m_nParameters,0.0);
+  m_currentParameterCovariance.assign(m_nParameters*m_nParameters,0.0);
+  m_noAdjustments.assign(m_nParameters,0.0);
+
 }
 
 
 MdisNacSensorModel::~MdisNacSensorModel() {}
 
+
+/**
+ * @brief MdisNacSensorModel::groundToImage
+ * @param groundPt
+ * @param desiredPrecision
+ * @param achievedPrecision
+ * @param warnings
+ * @return Returns <line, sample> coordinate in the image corresponding to the ground point
+ * without bundle adjustment correction.
+ */
 csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt,
                               double desiredPrecision,
                               double *achievedPrecision,
                               csm::WarningList *warnings) const {
 
-double xl, yl, zl;
-xl = m_spacecraftPosition[0];
-yl = m_spacecraftPosition[1];
-zl = m_spacecraftPosition[2];
 
-double x, y, z;
-x = groundPt.x;
-y = groundPt.y;
-z = groundPt.z;
+  return groundToImage(groundPt,m_noAdjustments,desiredPrecision,achievedPrecision,warnings);
 
-double xo, yo, zo;
-xo = xl - x;
-yo = yl - y;
-zo = zl - z;
-
-double f;
-f = m_focalLength;
-
-// Camera rotation matrix
-double m[3][3];
-calcRotationMatrix(m);
-
-// Sensor position
-double undistortedx, undistortedy, denom;
-denom = m[0][2] * xo + m[1][2] * yo + m[2][2] * zo;
-undistortedx = (f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_sample_pp;  //m_sample_pp like this assumes mm
-undistortedy = (f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_line_pp;
-
-// Apply the distortion to the line/sample location and then convert back to line/sample
-double distortedx, distortedy;
-distortionFunction(undistortedx, undistortedy, distortedx, distortedy);
-
-//Convert distorted mm into line/sample
-double sample, line;
-sample = m_iTransS[0] + m_iTransS[1] * distortedx + m_iTransS[2] * distortedx + m_ccdCenter[0] - 0.5;
-line =   m_iTransL[0] + m_iTransL[1] * distortedy + m_iTransL[2] * distortedy + m_ccdCenter[0] - 0.5;
-
-return csm::ImageCoord(line, sample);
 }
+
+/**
+ * @brief MdisNacSensorModel::groundToImage
+ * @param groundPt
+ * @param adjustments
+ * @param desired_precision
+ * @param achieved_precision
+ * @param warnings
+ * @return Returns <line,sample> coordinate in the image corresponding to the ground point.
+ * This function applies bundle adjustments to the final value.
+ */
+csm::ImageCoord MdisNacSensorModel::groundToImage(
+   const csm::EcefCoord&      groundPt,
+   const std::vector<double>& adjustments,
+   double                     desired_precision,
+   double*                    achieved_precision,
+   csm::WarningList*          warnings ) const {
+
+
+
+  double xl, yl, zl;
+  xl = m_spacecraftPosition[0];
+  yl = m_spacecraftPosition[1];
+  zl = m_spacecraftPosition[2];
+
+  double x, y, z;
+  x = groundPt.x;
+  y = groundPt.y;
+  z = groundPt.z;
+
+  double xo, yo, zo;
+
+  xo = xl - x - getValue(0,adjustments);
+  yo = yl - y - getValue(1,adjustments);
+  zo = zl - z - getValue(2,adjustments);
+
+  double f;
+  f = m_focalLength;
+
+  // Camera rotation matrix
+  double m[3][3];
+  //
+  //calcRotationMatrix(m,adjustments);
+  calcRotationMatrix(m);
+
+  // Sensor position
+  double undistortedx, undistortedy, denom;
+  denom = m[0][2] * xo + m[1][2] * yo + m[2][2] * zo;
+  undistortedx = (f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_sample_pp;
+  //m_sample_pp like this assumes mm
+  undistortedy = (f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_line_pp;
+
+  // Apply the distortion to the line/sample location and then convert back to line/sample
+  double distortedx, distortedy;
+  distortionFunction(undistortedx, undistortedy, distortedx, distortedy);
+
+  //Convert distorted mm into line/sample
+  double sample, line;
+  sample = m_iTransS[0] + m_iTransS[1] * distortedx + m_iTransS[2] * distortedx + m_ccdCenter[0] - 0.5;
+  line =   m_iTransL[0] + m_iTransL[1] * distortedy + m_iTransL[2] * distortedy + m_ccdCenter[0] - 0.5;
+
+  return csm::ImageCoord(line, sample);
+
+
+
+}
+
+
 
 
 csm::ImageCoordCovar MdisNacSensorModel::groundToImage(const csm::EcefCoordCovar &groundPt,
@@ -392,15 +442,41 @@ csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int inde
       "MdisNacSensorModel::computeSensorPartials");
 }
 
-csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index, const csm::ImageCoord &imagePt,
+/**
+ * @brief MdisNacSensorModel::computeSensorPartials
+ * @param index
+ * @param imagePt
+ * @param groundPt
+ * @param desiredPrecision
+ * @param achievedPrecision
+ * @param warnings
+ * @return The partial derivatives in the line,sample directions.
+ *
+ * Research:  We should investigate using a central difference scheme to approximate
+ * the partials.  It is more accurate, but it might be costlier calculation-wise.
+ *
+ */
+csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index,
+                                          const csm::ImageCoord &imagePt,
                                           const csm::EcefCoord &groundPt,
                                           double desiredPrecision,
                                           double *achievedPrecision,
                                           csm::WarningList *warnings) const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::computeSensorPartials");
+  const double delta = 1.0;
+  std::vector<double> adjustments(m_nParameters, 0.0);
+  adjustments[index] = delta;
+
+  csm::ImageCoord imagePt1 = groundToImage(groundPt,adjustments,desiredPrecision,achievedPrecision);
+
+  cout << "Img1 line:  " << imagePt1.line << " ,Img1 sample:  " << imagePt1.samp << endl;
+  csm::RasterGM::SensorPartials partials;
+
+  partials.first = (imagePt1.line - imagePt.line)/delta;
+  partials.second = (imagePt1.samp - imagePt.samp)/delta;
+
+  return partials;
+
 }
 
 std::vector<double> MdisNacSensorModel::computeGroundPartials(const csm::EcefCoord &groundPt) const {
@@ -590,16 +666,14 @@ csm::SharingCriteria MdisNacSensorModel::getParameterSharingCriteria(int index) 
 
 
 double MdisNacSensorModel::getParameterValue(int index) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "MdisNacSensorModel::getParameterValue");
+
+   return m_currentParameterValue[index];
+
 }
 
 
 void MdisNacSensorModel::setParameterValue(int index, double value) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "MdisNacSensorModel::setParameterValue");
+  m_currentParameterValue[index] = value;
 }
 
 
@@ -694,6 +768,30 @@ void MdisNacSensorModel::calcRotationMatrix(
   m[2][1] = -1 * sinw * cosp;
   m[2][2] = cosw * cosp;
 }
+
+
+void MdisNacSensorModel::calcRotationMatrix(
+  double m[3][3], const std::vector<double> &adjustments) const {
+
+  // Trigonometric functions for rotation matrix
+  double sinw = std::sin(getValue(3,adjustments));
+  double cosw = std::cos(getValue(3,adjustments));
+  double sinp = std::sin(getValue(4,adjustments));
+  double cosp = std::cos(getValue(4,adjustments));
+  double sink = std::sin(getValue(5,adjustments));
+  double cosk = std::cos(getValue(5,adjustments));
+
+  m[0][0] = cosp * cosk;
+  m[0][1] = cosw * sink + sinw * sinp * cosk;
+  m[0][2] = sinw * sink - cosw * sinp * cosk;
+  m[1][0] = -1 * cosp * sink;
+  m[1][1] = cosw * cosk - sinw * sinp * sink;
+  m[1][2] = sinw * cosk + cosw * sinp * sink;
+  m[2][0] = sinp;
+  m[2][1] = -1 * sinw * cosp;
+  m[2][2] = cosw * cosp;
+}
+
 
 void MdisNacSensorModel::losEllipsoidIntersect(
       const double& height,
@@ -882,6 +980,7 @@ void MdisNacSensorModel::distortionJacobian(double x, double y, double &Jxx, dou
 }
 
 
+
 /**
  * @description Compute distorted focal plane (dx,dy) coordinate  given an undistorted focal
  * plane (ux,uy) coordinate. This describes the third order Taylor approximation to the
@@ -914,3 +1013,13 @@ void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, do
     dy = dy + f[i] * m_odtY[i];
   }
 }
+
+/***** Helper Functions *****/
+
+double MdisNacSensorModel::getValue(
+   int index,
+   const std::vector<double> &adjustments) const
+{
+   return m_currentParameterValue[index] + adjustments[index];
+}
+

@@ -26,6 +26,12 @@ class MdisNacSensorModel : public csm::RasterGM {
                                           double *achievedPrecision=NULL,
                                           csm::WarningList *warnings=NULL) const;
 
+    virtual csm::ImageCoord groundToImage(const csm::EcefCoord& ground_pt,
+       const std::vector<double>& adjustments,
+       double                     desired_precision=0.001,
+       double*                    achieved_precision=NULL,
+       csm::WarningList*          warnings=NULL) const;
+
     /**
     * This function determines if a sample, line intersects the target body and if so, where
     * this intersection occurs in body-fixed coordinates.
@@ -323,8 +329,20 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_boresight[3];
     int m_nLines;
     int m_nSamples;
+    int m_nParameters;
+    //double * m_currentParameterValue;
+    std::vector<double> m_currentParameterValue;
+    //double * m_currentParameterCovariance;
+    std::vector<double> m_currentParameterCovariance;
+    //double * m_noParameters;
+    std::vector<double> m_noAdjustments;
   
+    double getValue(int index,const std::vector<double> &adjustments) const;
     void calcRotationMatrix(double m[3][3]) const;
+    void calcRotationMatrix(double m[3][3], const std::vector<double> &adjustments) const;
+
+
+
     void losEllipsoidIntersect (const double& height,const double& xc,
                                 const double& yc, const double& zc,
                                 const double& xl, const double& yl,
