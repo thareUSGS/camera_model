@@ -109,11 +109,7 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_nSamples = 0;
   
   // Initialize parameter values
-  m_currentParameterValue = new double[m_numParameters];
-  for (int i = 0; i < m_numParameters; i++) {
-    m_currentParameterValue[i] = 0.0;
-  }
-
+  m_currentParameterValue.assign(m_numParameters, 0.0);
   m_currentParameterCovariance.assign(m_numParameters*m_numParameters,0.0);
   m_noAdjustments.assign(m_numParameters,0.0);
 }
@@ -136,6 +132,27 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt
                               double *achievedPrecision,
                               csm::WarningList *warnings) const {
 
+  return groundToImage(groundPt,m_noAdjustments,desiredPrecision,achievedPrecision,warnings);
+}
+
+
+/**
+ * @brief MdisNacSensorModel::groundToImage
+ * @param groundPt
+ * @param adjustments
+ * @param desired_precision
+ * @param achieved_precision
+ * @param warnings
+ * @return Returns <line,sample> coordinate in the image corresponding to the ground point.
+ * This function applies bundle adjustments to the final value.
+ */
+csm::ImageCoord MdisNacSensorModel::groundToImage(
+    const csm::EcefCoord&      groundPt,
+    const std::vector<double>& adjustments,
+    double                     desired_precision,
+    double*                    achieved_precision,
+    csm::WarningList*          warnings ) const {
+                                
   double xl, yl, zl;
   xl = m_currentParameterValue[0];
   yl = m_currentParameterValue[1];
@@ -147,16 +164,16 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt
   z = groundPt.z;
 
   double xo, yo, zo;
-  xo = xl - x;
-  yo = yl - y;
-  zo = zl - z;
+  xo = xl - x - getValue(0,adjustments);
+  yo = yl - y - getValue(1,adjustments);
+  zo = zl - z - getValue(2,adjustments);
 
   double f;
   f = m_focalLength;
 
   // Camera rotation matrix
   double m[3][3];
-  calcRotationMatrix(m);
+  calcRotationMatrix(m,adjustments);
 
   // Sensor position
   double undistortedx, undistortedy, denom;
@@ -394,9 +411,8 @@ csm::EcefVector MdisNacSensorModel::getSensorVelocity(const csm::ImageCoord &ima
   // Make sure the passed coordinate is with the image dimensions.
   if (imagePt.samp < 0.0 || imagePt.samp > m_nSamples ||
       imagePt.line < 0.0 || imagePt.line > m_nLines) {
-    std::stringstream ss;
-    ss << "Image coordinate (" << imagePt.line << ", " << imagePt.samp << ") out of bounds.";
-    throw csm::Error(csm::Error::BOUNDS, ss.str(), "MdisNacSensorModel::getSensorVelocity");
+    throw csm::Error(csm::Error::BOUNDS, "Image coordinate out of bounds.", 
+                     "MdisNacSensorModel::getSensorVelocity");
   }
   
   // Since this is a frame, just return the sensor velocity the ISD gave us.
@@ -449,7 +465,7 @@ csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int inde
                                           csm::WarningList *warnings) const {
 
   const double delta = 1.0;
-  std::vector<double> adjustments(m_nParameters, 0.0);
+  std::vector<double> adjustments(m_numParameters, 0.0);
   adjustments[index] = delta;
 
   csm::ImageCoord imagePt1 = groundToImage(groundPt,adjustments,desiredPrecision,achievedPrecision);
@@ -729,6 +745,31 @@ std::vector<double> MdisNacSensorModel::getCrossCovarianceMatrix(
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
                    "MdisNacSensorModel::getCrossCovarianceMatrix");
+}
+
+
+void MdisNacSensorModel::calcRotationMatrix(
+    double m[3][3]) const {
+
+  // Trigonometric functions for rotation matrix
+  double sinw = std::sin(m_currentParameterValue[3]);
+  double cosw = std::cos(m_currentParameterValue[3]);
+  double sinp = std::sin(m_currentParameterValue[4]);
+  double cosp = std::cos(m_currentParameterValue[4]);
+  double sink = std::sin(m_currentParameterValue[5]);
+  double cosk = std::cos(m_currentParameterValue[5]);
+
+  // Rotation matrix taken from Introduction to Mordern Photogrammetry by
+  // Edward M. Mikhail, et al., p. 373
+  m[0][0] = cosp * cosk;
+  m[0][1] = cosw * sink + sinw * sinp * cosk;
+  m[0][2] = sinw * sink - cosw * sinp * cosk;
+  m[1][0] = -1 * cosp * sink;
+  m[1][1] = cosw * cosk - sinw * sinp * sink;
+  m[1][2] = sinw * cosk + cosw * sinp * sink;
+  m[2][0] = sinp;
+  m[2][1] = -1 * sinw * cosp;
+  m[2][2] = cosw * cosp;
 }
 
 

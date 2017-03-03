@@ -298,7 +298,12 @@ class MdisNacSensorModel : public csm::RasterGM {
     // Input parameters
     static const int m_numParameters;
     static const std::string m_parameterName[];
-    double* m_currentParameterValue;
+    //double * m_currentParameterValue;
+    std::vector<double> m_currentParameterValue;
+    //double * m_currentParameterCovariance;
+    std::vector<double> m_currentParameterCovariance;
+    //double * m_noParameters;
+    std::vector<double> m_noAdjustments;
 
     double m_transX[3];
     double m_transY[3];
@@ -329,18 +334,10 @@ class MdisNacSensorModel : public csm::RasterGM {
     int m_nLines;
     int m_nSamples;
     int m_nParameters;
-    //double * m_currentParameterValue;
-    std::vector<double> m_currentParameterValue;
-    //double * m_currentParameterCovariance;
-    std::vector<double> m_currentParameterCovariance;
-    //double * m_noParameters;
-    std::vector<double> m_noAdjustments;
-  
+
     double getValue(int index,const std::vector<double> &adjustments) const;
     void calcRotationMatrix(double m[3][3]) const;
     void calcRotationMatrix(double m[3][3], const std::vector<double> &adjustments) const;
-
-
 
     void losEllipsoidIntersect (const double& height,const double& xc,
                                 const double& yc, const double& zc,
