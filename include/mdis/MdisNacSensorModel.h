@@ -285,9 +285,6 @@ class MdisNacSensorModel : public csm::RasterGM {
     static const std::string _SENSOR_MODEL_NAME;
 
 
-
-
-
   protected:
 
     virtual bool setFocalPlane(double dx,double dy,double &undistortedX,double &undistortedY) const;
@@ -295,17 +292,24 @@ class MdisNacSensorModel : public csm::RasterGM {
     virtual void distortionJacobian(double x, double y, double &Jxx,
                                     double &Jxy, double &Jyx, double &Jyy) const;
 
+                                    
   private:
+    
+    // Input parameters
+    static const int m_numParameters;
+    static const std::string m_parameterName[];
+    //double * m_currentParameterValue;
+    std::vector<double> m_currentParameterValue;
+    //double * m_currentParameterCovariance;
+    std::vector<double> m_currentParameterCovariance;
+    //double * m_noParameters;
+    std::vector<double> m_noAdjustments;
 
     double m_transX[3];
     double m_transY[3];
     double m_majorAxis;
     double m_minorAxis;
-    double m_omega;
-    double m_phi;
-    double m_kappa;
     double m_focalLength;
-    double m_spacecraftPosition[3];
     double m_spacecraftVelocity[3];
     double m_sunPosition[3];
     double m_ccdCenter[2];
@@ -330,18 +334,10 @@ class MdisNacSensorModel : public csm::RasterGM {
     int m_nLines;
     int m_nSamples;
     int m_nParameters;
-    //double * m_currentParameterValue;
-    std::vector<double> m_currentParameterValue;
-    //double * m_currentParameterCovariance;
-    std::vector<double> m_currentParameterCovariance;
-    //double * m_noParameters;
-    std::vector<double> m_noAdjustments;
-  
+
     double getValue(int index,const std::vector<double> &adjustments) const;
     void calcRotationMatrix(double m[3][3]) const;
     void calcRotationMatrix(double m[3][3], const std::vector<double> &adjustments) const;
-
-
 
     void losEllipsoidIntersect (const double& height,const double& xc,
                                 const double& yc, const double& zc,

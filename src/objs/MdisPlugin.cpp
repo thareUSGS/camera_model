@@ -125,11 +125,11 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   sensorModel->m_focalLengthEpsilon =
       atof(imageSupportData.param("focal_length_epsilon").c_str());
 
-  sensorModel->m_spacecraftPosition[0] =
+  sensorModel->m_currentParameterValue[0] =
       atof(imageSupportData.param("x_sensor_origin").c_str());
-  sensorModel->m_spacecraftPosition[1] =
+  sensorModel->m_currentParameterValue[1] =
       atof(imageSupportData.param("y_sensor_origin").c_str());
-  sensorModel->m_spacecraftPosition[2] =
+  sensorModel->m_currentParameterValue[2] =
       atof(imageSupportData.param("z_sensor_origin").c_str());
   if (imageSupportData.param("x_sensor_origin") == "") {
     missingKeywords.push_back("x_sensor_origin");
@@ -157,9 +157,9 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
       atof(imageSupportData.param("z_sun_position").c_str());
   // sun position is not strictly necessary, but is required for getIlluminationDirection.
 
-  sensorModel->m_omega = atof(imageSupportData.param("omega").c_str());
-  sensorModel->m_phi = atof(imageSupportData.param("phi").c_str());
-  sensorModel->m_kappa = atof(imageSupportData.param("kappa").c_str());
+  sensorModel->m_currentParameterValue[3] = atof(imageSupportData.param("omega").c_str());
+  sensorModel->m_currentParameterValue[4] = atof(imageSupportData.param("phi").c_str());
+  sensorModel->m_currentParameterValue[5] = atof(imageSupportData.param("kappa").c_str());
   if (imageSupportData.param("omega") == "") {
     missingKeywords.push_back("omega");
   }
